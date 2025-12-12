@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ZkStatement } from '@/@types/credentials';
 import { useNetwork } from '@/providers/network.provider';
 import { useVaultApi, useActaClient } from '@acta-team/acta-sdk';
@@ -111,7 +111,7 @@ export function useCredentialVerify(vcId: string) {
               setVerify(v);
               return;
             }
-          } catch (e) {}
+          } catch {}
         }
 
         const issuanceId = cfg.issuanceContractId || '';
@@ -128,11 +128,11 @@ export function useCredentialVerify(vcId: string) {
               setVerify(r);
               return;
             }
-          } catch (e) {}
+          } catch {}
         }
 
         setVerify({ vc_id: vcId, status: 'not_verified' });
-      } catch (e) {
+      } catch {
         setVerify({ vc_id: vcId, status: 'not_verified' });
       }
     };
@@ -162,7 +162,7 @@ export function useCredentialVerify(vcId: string) {
       const ok = await verifyZkProof(sp as unknown as typeof sp);
       setZkValid(ok);
       setHasVerified(true);
-    } catch (e) {
+    } catch {
     } finally {
       setReverifyLoading(false);
     }

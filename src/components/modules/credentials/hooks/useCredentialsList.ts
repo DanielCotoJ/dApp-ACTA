@@ -5,7 +5,6 @@ import { useVault } from '@/components/modules/vault/hooks/use-vault';
 import type { Credential } from '@/@types/credentials';
 import { toast } from 'sonner';
 import { useNetwork } from '@/providers/network.provider';
-import { useWalletContext } from '@/providers/wallet.provider';
 
 function adaptVcToCredential(vc: unknown): Credential {
   const obj = (vc ?? {}) as Record<string, unknown>;
@@ -67,7 +66,6 @@ export function useCredentialsList() {
   const [filter, setFilter] = useState<string>('all');
   const { vcs, revokeCredential } = useVault();
   const { network } = useNetwork();
-  const { walletAddress } = useWalletContext();
 
   const source = useMemo<Credential[]>(() => {
     const list = Array.isArray(vcs) ? (vcs as unknown[]).map((vc) => adaptVcToCredential(vc)) : [];
@@ -121,7 +119,7 @@ export function useCredentialsList() {
         setRevokingId(null);
       }
     },
-    [revokeCredential, network, source, walletAddress]
+    [revokeCredential, network, source]
   );
 
   return {
