@@ -49,7 +49,7 @@ export default function ShareCredentialModal({
         const QR = await import('qrcode');
         const dataUrl = await QR.toDataURL(url, { width: 512, margin: 2 });
         setQrDataUrl(dataUrl);
-      } catch (e) {}
+      } catch {}
     })();
   }, [shareParam, credential?.id]);
 

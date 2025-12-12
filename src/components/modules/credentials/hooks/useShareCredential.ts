@@ -89,7 +89,7 @@ export function useShareCredential(credential: Credential | null) {
         for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
         const encoded = encodeURIComponent(btoa(binary));
         setShareParam(encoded);
-      } catch (e) {
+      } catch {
         setShareParam('');
       }
     })();
@@ -118,7 +118,7 @@ export function useShareCredential(credential: Credential | null) {
       const url = `${window.location.origin}/credential/${vcId}?share=${shareParam}`;
       await navigator.clipboard.writeText(url);
       setCopied(true);
-    } catch (e) {}
+    } catch {}
   };
 
   async function onGenerateProof() {
