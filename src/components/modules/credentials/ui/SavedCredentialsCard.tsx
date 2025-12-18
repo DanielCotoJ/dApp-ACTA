@@ -75,7 +75,7 @@ export function CredentialCard({
                 variant="ghost"
                 size="sm"
                 onClick={() => onCopy(wallet, 'Wallet')}
-                className="h-8 w-8 p-0 hover:bg-[#edeed1]/10 text-white flex-shrink-0 border border-[#edeed1]/30 rounded-lg"
+                className="h-8 w-8 p-0 hover:bg-[#edeed1]/10 text-white shrink-0 border border-[#edeed1]/30 rounded-lg"
               >
                 <Copy className="w-4 h-4" />
               </Button>
@@ -106,7 +106,7 @@ export function CredentialCard({
                 onClick={onView}
                 title="View"
                 aria-label="View"
-                className="h-11 w-11 rounded-xl bg-zinc-900/40 border border-zinc-700/40 hover:bg-zinc-800/40 text-white flex-shrink-0"
+                className="h-11 w-11 rounded-xl bg-zinc-900/40 border border-zinc-700/40 hover:bg-zinc-800/40 text-white shrink-0"
               >
                 <Eye className="w-4 h-4" />
               </Button>
@@ -118,7 +118,7 @@ export function CredentialCard({
                 onClick={onRevoke}
                 title="Revoke"
                 aria-label="Revoke"
-                className="h-11 w-11 rounded-xl bg-red-900/20 border border-red-700/40 hover:bg-red-800/30 text-red-400 flex-shrink-0"
+                className="h-11 w-11 rounded-xl bg-red-900/20 border border-red-700/40 hover:bg-red-800/30 text-red-400 shrink-0"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
@@ -130,7 +130,7 @@ export function CredentialCard({
                 onClick={onShare}
                 title="Share"
                 aria-label="Share"
-                className="h-11 w-11 rounded-xl bg-[#edeed1]/10 border border-[#edeed1]/30 hover:bg-[#edeed1]/20 text-white flex-shrink-0"
+                className="h-11 w-11 rounded-xl bg-[#edeed1]/10 border border-[#edeed1]/30 hover:bg-[#edeed1]/20 text-white shrink-0"
               >
                 <Share2 className="w-4 h-4" />
               </Button>
