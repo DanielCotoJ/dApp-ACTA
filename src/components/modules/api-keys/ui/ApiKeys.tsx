@@ -14,7 +14,7 @@ function formatDate(iso: string | null) {
 }
 
 export default function ApiKeys() {
-  const { network, baseUrl, loading, error, data, requestStandardKey, reset } = usePublicApiKey();
+  const { loading, error, data, requestStandardKey } = usePublicApiKey();
 
   const [name, setName] = useState('');
   const [copied, setCopied] = useState(false);
