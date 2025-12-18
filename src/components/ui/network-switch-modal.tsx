@@ -55,8 +55,8 @@ export function NetworkSwitchModal({ open, onOpenChange, onConfirm }: Props) {
             {TEMP_DISABLE_MAINNET && (
               <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3">
                 <div className="text-sm font-semibold text-red-300">
-                  Actualmente estamos haciendo cambios en la API y contratos, por que no esta
-                  disponible mainnet
+                  We are currently updating the API and contracts, so Mainnet is temporarily
+                  unavailable.
                 </div>
               </div>
             )}
