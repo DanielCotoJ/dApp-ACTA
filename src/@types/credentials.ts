@@ -17,6 +17,15 @@ export type Credential = {
   expirationDate: string | null;
   status: 'valid' | 'expired' | 'revoked';
   birthDate?: string;
+  /**
+   * Full VC payload (decoded from the vault record `data` field when possible).
+   * This is what you want when "viewing credential content".
+   */
+  raw?: unknown;
+  /**
+   * Raw vault record returned by the API (`/contracts/vault/get-vc` + status merge).
+   */
+  vaultRecord?: unknown;
 };
 
 export type CredentialVerifyProps = {
@@ -72,4 +81,5 @@ export type CredentialCardProps = {
   onCopy?: (text: string, label: string) => void;
   onShare?: () => void;
   onRevoke?: () => void;
+  onView?: () => void;
 };

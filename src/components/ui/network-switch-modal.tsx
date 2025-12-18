@@ -5,6 +5,10 @@ import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
 
+// Temporary: Mainnet is currently disabled while we update API + contracts.
+// Keep the old "mainnet warning" copy below for when we re-enable it.
+const TEMP_DISABLE_MAINNET = true;
+
 type Props = {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -48,26 +52,41 @@ export function NetworkSwitchModal({ open, onOpenChange, onConfirm }: Props) {
           </div>
 
           <div className="space-y-3 px-5 py-4">
-            <div className="rounded-xl border border-white/20 bg-white/5 p-3">
-              <div className="text-sm font-semibold text-white">Important Notice</div>
-              <ul className="mt-2 space-y-1.5 pl-5 text-xs text-zinc-300 list-disc">
-                <li>Mainnet uses real XLM and assets with financial implications.</li>
-                <li>All transactions are permanent and irreversible.</li>
-                <li>You are using real funds, not test tokens.</li>
-                <li>Ensure your wallet is connected to the correct network.</li>
-                <li>In ACTA, issued credentials will be recorded in your Vault.</li>
-                <li>If you encounter issues switching, disconnect and reconnect your wallet.</li>
-              </ul>
-            </div>
+            {TEMP_DISABLE_MAINNET && (
+              <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3">
+                <div className="text-sm font-semibold text-red-300">
+                  We are currently updating the API and contracts, so Mainnet is temporarily
+                  unavailable.
+                </div>
+              </div>
+            )}
 
-            <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-              <div className="text-sm font-semibold text-white">What is Mainnet?</div>
-              <p className="mt-2 text-xs leading-relaxed text-zinc-300">
-                Mainnet is Stellar's production network where real transactions occur. Unlike
-                testnet, all operations are effective and may have economic impact. Make sure you
-                understand the risks before continuing.
-              </p>
-            </div>
+            {!TEMP_DISABLE_MAINNET && (
+              <>
+                <div className="rounded-xl border border-white/20 bg-white/5 p-3">
+                  <div className="text-sm font-semibold text-white">Important Notice</div>
+                  <ul className="mt-2 space-y-1.5 pl-5 text-xs text-zinc-300 list-disc">
+                    <li>Mainnet uses real XLM and assets with financial implications.</li>
+                    <li>All transactions are permanent and irreversible.</li>
+                    <li>You are using real funds, not test tokens.</li>
+                    <li>Ensure your wallet is connected to the correct network.</li>
+                    <li>In ACTA, issued credentials will be recorded in your Vault.</li>
+                    <li>
+                      If you encounter issues switching, disconnect and reconnect your wallet.
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                  <div className="text-sm font-semibold text-white">What is Mainnet?</div>
+                  <p className="mt-2 text-xs leading-relaxed text-zinc-300">
+                    Mainnet is Stellar&apos;s production network where real transactions occur.
+                    Unlike testnet, all operations are effective and may have economic impact. Make
+                    sure you understand the risks before continuing.
+                  </p>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="flex justify-end gap-3 border-t border-white/10 px-5 py-3">
@@ -76,15 +95,24 @@ export function NetworkSwitchModal({ open, onOpenChange, onConfirm }: Props) {
                 Cancel
               </button>
             </Dialog.Close>
-            <button
-              onClick={() => {
-                onConfirm();
-                onOpenChange(false);
-              }}
-              className="rounded-lg border border-white bg-white px-5 py-2.5 text-sm font-medium text-black transition-colors hover:bg-white/90"
-            >
-              Switch to Mainnet
-            </button>
+            {!TEMP_DISABLE_MAINNET ? (
+              <button
+                onClick={() => {
+                  onConfirm();
+                  onOpenChange(false);
+                }}
+                className="rounded-lg border border-white bg-white px-5 py-2.5 text-sm font-medium text-black transition-colors hover:bg-white/90"
+              >
+                Switch to Mainnet
+              </button>
+            ) : (
+              <button
+                onClick={() => onOpenChange(false)}
+                className="rounded-lg border border-red-500/40 bg-transparent px-5 py-2.5 text-sm font-medium text-red-200 transition-colors hover:bg-red-500/10"
+              >
+                OK
+              </button>
+            )}
           </div>
         </Dialog.Content>
       </Dialog.Portal>

@@ -7,7 +7,8 @@ import TemplateSelector from './TemplateSelector';
 
 export default function IssueBuilder() {
   const { templates } = useCredentialTemplates();
-  const { state, selectTemplate, setFieldValue, buildPreview, issue } = useIssueCredential();
+  const { state, apiKey, setApiKey, selectTemplate, setFieldValue, buildPreview, issue } =
+    useIssueCredential();
 
   return (
     <div className="space-y-6">
@@ -24,6 +25,8 @@ export default function IssueBuilder() {
         issuing={state.issuing}
         preview={state.preview}
         error={state.error}
+        apiKey={apiKey}
+        onSetApiKey={setApiKey}
         onSetField={setFieldValue}
         onBuildPreview={buildPreview}
         onSubmit={async () => {

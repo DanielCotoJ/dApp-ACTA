@@ -2,7 +2,7 @@
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy, Share2, Trash2 } from 'lucide-react';
+import { Copy, Share2, Trash2, Eye } from 'lucide-react';
 import Image from 'next/image';
 import { BorderBeam } from '@/components/ui/border-beam';
 import type { CredentialCardProps } from '@/@types/credentials';
@@ -16,6 +16,7 @@ export function CredentialCard({
   onShare,
   status,
   onRevoke,
+  onView,
 }: CredentialCardProps) {
   return (
     <Card className="relative overflow-hidden bg-black border-[#edeed1]/40 min-h-[200px] w-full p-0">
@@ -74,7 +75,7 @@ export function CredentialCard({
                 variant="ghost"
                 size="sm"
                 onClick={() => onCopy(wallet, 'Wallet')}
-                className="h-8 w-8 p-0 hover:bg-[#edeed1]/10 text-white flex-shrink-0 border border-[#edeed1]/30 rounded-lg"
+                className="h-8 w-8 p-0 hover:bg-[#edeed1]/10 text-white shrink-0 border border-[#edeed1]/30 rounded-lg"
               >
                 <Copy className="w-4 h-4" />
               </Button>
@@ -98,6 +99,18 @@ export function CredentialCard({
             )}
           </div>
           <div className="flex items-center gap-2">
+            {onView && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onView}
+                title="View"
+                aria-label="View"
+                className="h-11 w-11 rounded-xl bg-zinc-900/40 border border-zinc-700/40 hover:bg-zinc-800/40 text-white shrink-0"
+              >
+                <Eye className="w-4 h-4" />
+              </Button>
+            )}
             {onRevoke && (
               <Button
                 variant="ghost"
@@ -105,7 +118,7 @@ export function CredentialCard({
                 onClick={onRevoke}
                 title="Revoke"
                 aria-label="Revoke"
-                className="h-11 w-11 rounded-xl bg-red-900/20 border border-red-700/40 hover:bg-red-800/30 text-red-400 flex-shrink-0"
+                className="h-11 w-11 rounded-xl bg-red-900/20 border border-red-700/40 hover:bg-red-800/30 text-red-400 shrink-0"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
@@ -117,7 +130,7 @@ export function CredentialCard({
                 onClick={onShare}
                 title="Share"
                 aria-label="Share"
-                className="h-11 w-11 rounded-xl bg-[#edeed1]/10 border border-[#edeed1]/30 hover:bg-[#edeed1]/20 text-white flex-shrink-0"
+                className="h-11 w-11 rounded-xl bg-[#edeed1]/10 border border-[#edeed1]/30 hover:bg-[#edeed1]/20 text-white shrink-0"
               >
                 <Share2 className="w-4 h-4" />
               </Button>

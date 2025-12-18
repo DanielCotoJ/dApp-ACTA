@@ -24,10 +24,10 @@
     quick-lru "7.0.1"
     uuid "13.0.0"
 
-"@acta-team/acta-sdk@^1.0.3":
-  version "1.0.3"
-  resolved "https://registry.npmjs.org/@acta-team/acta-sdk/-/acta-sdk-1.0.3.tgz"
-  integrity sha512-xxcSM+tTDFGe+YGiQkx3bkwginaTGRxb8S5JSUHCKXS16jRi5V0Cqs86fxfbtxKORH/MVV7BoS0dYBCs2bTsAA==
+"@acta-team/acta-sdk@^1.0.5":
+  version "1.0.5"
+  resolved "https://registry.npmjs.org/@acta-team/acta-sdk/-/acta-sdk-1.0.5.tgz"
+  integrity sha512-9o43Y8LHHhhoNW17km2EkMuVIRb0Fcp46vm94N5TI46lPZlVZdBGAgNmVHE+q4anpZH5e1m1wKyQQYN6xS1ujQ==
   dependencies:
     "@stellar/stellar-sdk" "^13.3.0"
     axios "^1.9.0"

@@ -12,6 +12,16 @@ const nextConfig: NextConfig = {
     };
     config.resolve.mainFields = ['browser', 'module', 'main'];
 
+    // Silence known noisy warnings from optional native deps pulled in via stellar-sdk
+    // (they still work in the browser via fallbacks, but webpack can't statically analyze them).
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      {
+        module: /node_modules[\\/](require-addon|sodium-native)[\\/]/,
+        message: /Critical dependency:/,
+      },
+    ];
+
     // Ignore test files and unnecessary files from node_modules
     config.plugins = [
       ...(config.plugins || []),

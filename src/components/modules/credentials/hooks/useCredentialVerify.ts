@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import type { ZkStatement } from '@/@types/credentials';
 import { useNetwork } from '@/providers/network.provider';
-import { useVaultApi, useActaClient } from '@acta-team/acta-sdk';
-import { verifyOnChain } from '@/lib/actaOnChain';
 import { useWalletContext } from '@/providers/wallet.provider';
 import { verifyZkProof } from '@/lib/zk';
+import { useActaApiKey } from '@/components/modules/vault/hooks/use-acta-api-key';
+import { actaFetchJson } from '@/lib/actaApi';
 
 type VerifyResult = {
   vc_id: string;
@@ -17,14 +17,13 @@ type VerifyResult = {
 export function useCredentialVerify(vcId: string) {
   const { network } = useNetwork();
   const { walletAddress } = useWalletContext();
+  const { apiKey } = useActaApiKey();
   const [verify, setVerify] = useState<VerifyResult | null>(null);
   const [revealed, setRevealed] = useState<Record<string, unknown> | null>(null);
   const [zkValid, setZkValid] = useState<boolean | null>(null);
   const [zkStatement, setZkStatement] = useState<ZkStatement | null>(null);
   const [hasVerified, setHasVerified] = useState(false);
   const [reverifyLoading, setReverifyLoading] = useState(false);
-  const { verifyInVault } = useVaultApi();
-  const client = useActaClient();
   const [shareParam, setShareParam] = useState<unknown>(null);
   useEffect(() => {
     const read = async () => {
@@ -80,8 +79,6 @@ export function useCredentialVerify(vcId: string) {
   useEffect(() => {
     const run = async () => {
       try {
-        const cfg = client.getDefaults();
-        const vaultIdOverride = cfg.vaultContractId || '';
         if (shareParam && typeof shareParam === 'object') {
           const sp = shareParam as {
             revealedFields?: Record<string, unknown>;
@@ -99,33 +96,18 @@ export function useCredentialVerify(vcId: string) {
           // No auto-verification: status must be shown only after user clicks
         }
 
-        if (vcId && walletAddress) {
+        // API-based verification requires API key + owner wallet address.
+        if (vcId && walletAddress && apiKey.trim()) {
           try {
-            const v = await verifyInVault({
-              owner: walletAddress,
-              vcId,
-              vaultContractId: vaultIdOverride || undefined,
+            const v = await actaFetchJson<{ status: string; since?: string }>({
+              network,
+              apiKey: apiKey.trim(),
+              path: '/contracts/vault/verify-vc',
+              body: { owner: walletAddress, vcId },
             });
             const norm = (v?.status || '').toLowerCase();
-            if (norm === 'valid' || norm === 'revoked') {
-              setVerify(v);
-              return;
-            }
-          } catch {}
-        }
-
-        const issuanceId = cfg.issuanceContractId || '';
-        if (vcId && issuanceId) {
-          try {
-            const r = await verifyOnChain({
-              rpcUrl: cfg.rpcUrl,
-              networkPassphrase: cfg.networkPassphrase,
-              issuanceContractId: issuanceId,
-              vcId,
-            });
-            const norm = (r?.status || '').toLowerCase();
-            if (norm === 'valid' || norm === 'revoked') {
-              setVerify(r);
+            if (norm) {
+              setVerify({ vc_id: vcId, status: v.status, since: v.since ?? null });
               return;
             }
           } catch {}
@@ -137,7 +119,7 @@ export function useCredentialVerify(vcId: string) {
       }
     };
     run();
-  }, [vcId, network, walletAddress, shareParam, verifyInVault, client]);
+  }, [vcId, network, walletAddress, shareParam, apiKey]);
 
   const reverify = async () => {
     if (!shareParam || typeof shareParam !== 'object') return;

@@ -1,257 +1,419 @@
 'use client';
 
 import * as StellarSdk from '@stellar/stellar-sdk';
-import {
-  useCreateVault,
-  useAuthorizeIssuer,
-  useVaultApi,
-  useActaClient,
-} from '@acta-team/acta-sdk';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+
 import { useWalletContext } from '@/providers/wallet.provider';
 import { useNetwork } from '@/providers/network.provider';
 import { mapContractErrorToMessage } from '@/lib/utils';
+import { actaFetchJson } from '@/lib/actaApi';
+import { useActaApiKey } from '@/components/modules/vault/hooks/use-acta-api-key';
 
-async function waitForTx(server: StellarSdk.rpc.Server, hash: string): Promise<void> {
-  for (let i = 0; i < 40; i++) {
-    try {
-      const res = await server.getTransaction(hash);
-      const status = (res as { status: string }).status;
-      if (status === 'SUCCESS') return;
-      if (status === 'FAILED') throw new Error('FAILED');
-    } catch {
-      // ignore and retry
-    }
-    await new Promise((r) => setTimeout(r, 1200));
-  }
+type ApiConfig = {
+  rpcUrl: string;
+  networkPassphrase: string;
+  actaContractId: string;
+};
+
+type TxPrepareResponse = { xdr: string; network: string };
+
+async function fetchApiConfig(params: { network: 'testnet' | 'mainnet'; apiKey: string }) {
+  return actaFetchJson<ApiConfig>({
+    network: params.network,
+    apiKey: params.apiKey,
+    method: 'GET',
+    path: '/config',
+  });
+}
+
+async function submitPreparedTx(params: {
+  network: 'testnet' | 'mainnet';
+  apiKey: string;
+  preparePath: string;
+  prepareBody: unknown;
+  sign: (xdr: string, opts: { networkPassphrase: string }) => Promise<string>;
+  networkPassphraseOverride?: string;
+}) {
+  const prep = await actaFetchJson<TxPrepareResponse>({
+    network: params.network,
+    apiKey: params.apiKey,
+    method: 'POST',
+    path: params.preparePath,
+    body: params.prepareBody,
+  });
+
+  const signedXdr = await params.sign(prep.xdr, {
+    networkPassphrase: params.networkPassphraseOverride || prep.network,
+  });
+
+  const submit = await actaFetchJson<{ tx_id: string }>({
+    network: params.network,
+    apiKey: params.apiKey,
+    method: 'POST',
+    path: params.preparePath,
+    body: { signedXdr },
+  });
+
+  return submit;
 }
 
 export function useVault() {
   const { walletAddress, signTransaction } = useWalletContext();
   const { network } = useNetwork();
-  const [loading, setLoading] = useState(false);
+  const { apiKey } = useActaApiKey();
+
   const queryClient = useQueryClient();
-  const [config, setConfig] = useState<{
-    rpcUrl: string;
-    networkPassphrase: string;
-    vaultContractId: string;
-  } | null>(null);
-  const [vaultExists, setVaultExists] = useState<boolean | null>(null);
-  const [vcIds, setVcIds] = useState<string[] | null>(null);
-  const [vcs, setVcs] = useState<unknown[] | null>(null);
-  const [vcReadError, setVcReadError] = useState<boolean>(false);
-  const horizonUrl = useMemo(
-    () =>
-      network === 'mainnet' ? 'https://horizon.stellar.org' : 'https://horizon-testnet.stellar.org',
-    [network]
-  );
-  const [xlmBalance, setXlmBalance] = useState<string | null>(null);
-  const [usdcBalance, setUsdcBalance] = useState<string | null>(null);
-  const [ownerCreatedAt, setOwnerCreatedAt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const client = useActaClient();
+  const [config, setConfig] = useState<ApiConfig | null>(null);
+
+  const ownerDid = useMemo(() => {
+    return walletAddress
+      ? `did:pkh:stellar:${network === 'mainnet' ? 'public' : 'testnet'}:${walletAddress}`
+      : null;
+  }, [walletAddress, network]);
+
   const ensureConfig = useCallback(async () => {
+    if (!apiKey) throw new Error('API key is required');
     if (config) return config;
-    const cfg = client.getDefaults();
-    const picked = {
-      rpcUrl: cfg.rpcUrl,
+    const cfg = await fetchApiConfig({ network, apiKey });
+    setConfig(cfg);
+    return cfg;
+  }, [apiKey, config, network]);
+
+  useEffect(() => {
+    // Reset cached config when API key or network changes.
+    setConfig(null);
+  }, [apiKey, network]);
+
+  const checkVaultExists = useCallback(async (): Promise<boolean | null> => {
+    if (!walletAddress) return null;
+    if (!ownerDid) return null;
+    if (!apiKey) return null;
+
+    const cfg = await ensureConfig();
+
+    const server = new StellarSdk.rpc.Server(cfg.rpcUrl);
+    const sourceAccount = await server.getAccount(walletAddress);
+    const account = new StellarSdk.Account(walletAddress, sourceAccount.sequenceNumber());
+    const contract = new StellarSdk.Contract(cfg.actaContractId);
+
+    const tx = new StellarSdk.TransactionBuilder(account, {
+      fee: StellarSdk.BASE_FEE.toString(),
       networkPassphrase: cfg.networkPassphrase,
-      vaultContractId: cfg.vaultContractId,
-    };
-    setConfig(picked);
-    return picked;
-  }, [config, client]);
-
-  const ownerDid = walletAddress
-    ? `did:pkh:stellar:${network === 'mainnet' ? 'public' : 'testnet'}:${walletAddress}`
-    : null;
-
-  const checkVaultExists = useCallback(async () => {
-    if (!walletAddress) return false;
-    const { rpcUrl, networkPassphrase, vaultContractId } = await ensureConfig();
-    if (!vaultContractId) return false;
-    try {
-      const server = new StellarSdk.rpc.Server(rpcUrl);
-      const sourceAccount = await server.getAccount(walletAddress);
-      const account = new StellarSdk.Account(walletAddress, sourceAccount.sequenceNumber());
-      const contract = new StellarSdk.Contract(vaultContractId);
-      const tx = new StellarSdk.TransactionBuilder(account, {
-        fee: StellarSdk.BASE_FEE.toString(),
-        networkPassphrase,
-      })
-        .addOperation(
-          contract.call(
-            'initialize',
-            StellarSdk.Address.fromString(walletAddress).toScVal(),
-            StellarSdk.xdr.ScVal.scvString(ownerDid || '')
-          )
+    })
+      .addOperation(
+        contract.call(
+          // Existence probe:
+          // - If vault is NOT initialized, this fails with ContractError::VaultNotInitialized (#8)
+          //   BEFORE requiring auth.
+          // - If vault exists, simulation has no signature so it fails with an auth error.
+          'set_vault_admin',
+          StellarSdk.Address.fromString(walletAddress).toScVal(),
+          StellarSdk.Address.fromString(walletAddress).toScVal()
         )
-        .setTimeout(60)
-        .build();
+      )
+      .setTimeout(60)
+      .build();
 
-      const sim = (await server.simulateTransaction(tx)) as { error?: string };
-      const err = sim.error;
-      if (err && typeof err === 'string') {
-        const friendly = mapContractErrorToMessage(err);
-        if (/initialized/i.test(friendly)) return true; // "Vault already initialized"
-        return false;
-      }
-      // If no error, vault not initialized yet
-      return false;
-    } catch {
+    const sim = (await server.simulateTransaction(tx)) as { error?: unknown };
+    const err = sim.error;
+    if (typeof err === 'string') {
+      // Vault NOT initialized
+      if (/Error\(Contract,\s*#8\)/.test(err) || /VaultNotInitialized/i.test(err)) return false;
+
+      // Any auth error indicates the vault exists but simulation lacks auth.
+      if (/Error\(Auth,/i.test(err) || /\bauth\b/i.test(err)) return true;
+
+      // Conservative fallback: unknown error => treat as not existing.
       return false;
     }
-  }, [walletAddress, ensureConfig, ownerDid]);
 
-  const { listVcIdsDirect, getVcDirect } = useVaultApi();
-  const fetchVcIdsDirect = useCallback(async () => {
-    if (!walletAddress) return [] as string[];
+    // If no error, the call would succeed => vault exists.
+    return true;
+  }, [walletAddress, ownerDid, apiKey, ensureConfig]);
+
+  const checkSelfAuthorized = useCallback(async (): Promise<boolean> => {
+    if (!walletAddress) return false;
+    if (!apiKey) return false;
+
     const cfg = await ensureConfig();
-    const ids = await listVcIdsDirect({
-      owner: walletAddress,
-      vaultContractId: cfg.vaultContractId,
-    });
-    return ids;
-  }, [walletAddress, ensureConfig, listVcIdsDirect]);
 
-  const fetchVcDirect = useCallback(
-    async (vcId: string) => {
-      if (!walletAddress) return null;
-      const cfg = await ensureConfig();
-      const vc = await getVcDirect({
-        owner: walletAddress,
-        vcId,
-        vaultContractId: cfg.vaultContractId,
+    const server = new StellarSdk.rpc.Server(cfg.rpcUrl);
+    const sourceAccount = await server.getAccount(walletAddress);
+    const account = new StellarSdk.Account(walletAddress, sourceAccount.sequenceNumber());
+    const contract = new StellarSdk.Contract(cfg.actaContractId);
+
+    const tx = new StellarSdk.TransactionBuilder(account, {
+      fee: StellarSdk.BASE_FEE.toString(),
+      networkPassphrase: cfg.networkPassphrase,
+    })
+      .addOperation(
+        contract.call(
+          'authorize_issuer',
+          StellarSdk.Address.fromString(walletAddress).toScVal(),
+          StellarSdk.Address.fromString(walletAddress).toScVal()
+        )
+      )
+      .setTimeout(60)
+      .build();
+
+    const sim = (await server.simulateTransaction(tx)) as { error?: unknown };
+    const err = sim.error;
+
+    if (typeof err === 'string') {
+      // IssuerAlreadyAuthorized
+      if (/Error\(Contract,\s*#3\)/.test(err) || /IssuerAlreadyAuthorized/i.test(err)) return true;
+      return false;
+    }
+
+    return false;
+  }, [walletAddress, apiKey, ensureConfig]);
+
+  const createVault = useCallback(async () => {
+    if (!walletAddress) throw new Error('Connect your wallet first');
+    if (!ownerDid) throw new Error('Could not compute owner DID');
+    if (!apiKey) throw new Error('API key is required');
+    if (!signTransaction) throw new Error('Signer unavailable');
+
+    setLoading(true);
+    try {
+      const submit = await submitPreparedTx({
+        network,
+        apiKey,
+        preparePath: '/contracts/vault/create',
+        prepareBody: {
+          owner: walletAddress,
+          didUri: ownerDid,
+          sourcePublicKey: walletAddress,
+        },
+        sign: signTransaction,
       });
-      return vc as unknown;
+
+      queryClient.setQueryData(['vault', 'exists', walletAddress, network], true);
+      await queryClient.invalidateQueries({
+        queryKey: ['vault', 'dashboard', walletAddress, network],
+      });
+
+      return { txId: submit.tx_id };
+    } catch (e: unknown) {
+      throw new Error(mapContractErrorToMessage(e));
+    } finally {
+      setLoading(false);
+    }
+  }, [walletAddress, ownerDid, apiKey, signTransaction, network, queryClient]);
+
+  const authorizeSelf = useCallback(async () => {
+    if (!walletAddress) throw new Error('Connect your wallet first');
+    if (!apiKey) throw new Error('API key is required');
+    if (!signTransaction) throw new Error('Signer unavailable');
+
+    setLoading(true);
+    try {
+      const submit = await submitPreparedTx({
+        network,
+        apiKey,
+        preparePath: '/contracts/vault/authorize-issuer',
+        prepareBody: {
+          owner: walletAddress,
+          issuer: walletAddress,
+          sourcePublicKey: walletAddress,
+        },
+        sign: signTransaction,
+      });
+
+      await queryClient.invalidateQueries({
+        queryKey: ['vault', 'dashboard', walletAddress, network],
+      });
+      return { txId: submit.tx_id };
+    } catch (e: unknown) {
+      throw new Error(mapContractErrorToMessage(e));
+    } finally {
+      setLoading(false);
+    }
+  }, [walletAddress, apiKey, signTransaction, network, queryClient]);
+
+  const authorizeAddress = useCallback(
+    async (address: string) => {
+      if (!walletAddress) throw new Error('Connect your wallet first');
+      if (!apiKey) throw new Error('API key is required');
+      if (!signTransaction) throw new Error('Signer unavailable');
+      if (!address) throw new Error('Address required');
+
+      setLoading(true);
+      try {
+        const submit = await submitPreparedTx({
+          network,
+          apiKey,
+          preparePath: '/contracts/vault/authorize-issuer',
+          prepareBody: {
+            owner: walletAddress,
+            issuer: address,
+            sourcePublicKey: walletAddress,
+          },
+          sign: signTransaction,
+        });
+
+        await queryClient.invalidateQueries({
+          queryKey: ['vault', 'dashboard', walletAddress, network],
+        });
+        return { txId: submit.tx_id };
+      } catch (e: unknown) {
+        throw new Error(mapContractErrorToMessage(e));
+      } finally {
+        setLoading(false);
+      }
     },
-    [walletAddress, ensureConfig, getVcDirect]
+    [walletAddress, apiKey, signTransaction, network, queryClient]
   );
 
-  const fetchXlmBalance = useCallback(async () => {
-    if (!walletAddress) return null;
-    try {
-      const resp = await fetch(`${horizonUrl}/accounts/${walletAddress}`, {
-        method: 'GET',
-      });
-      if (!resp.ok) return null;
-      const json = await resp.json();
-      const balances: unknown[] = Array.isArray(json?.balances) ? json.balances : [];
-      const bal =
-        (balances as Array<{ asset_type?: string; balance?: string }>).find(
-          (b) => b.asset_type === 'native'
-        )?.balance || null;
-      // capture owner account created_at for approximate vault creation
-      if (json?.created_at) {
-        setOwnerCreatedAt(String(json.created_at));
-      }
-      return bal || null;
-    } catch {
-      return null;
-    }
-  }, [walletAddress, horizonUrl]);
+  const revokeAddress = useCallback(
+    async (address: string) => {
+      if (!walletAddress) throw new Error('Connect your wallet first');
+      if (!apiKey) throw new Error('API key is required');
+      if (!signTransaction) throw new Error('Signer unavailable');
+      if (!address) throw new Error('Address required');
 
-  const fetchUsdcBalance = useCallback(async () => {
-    if (!walletAddress) return null;
-    try {
-      const resp = await fetch(`${horizonUrl}/accounts/${walletAddress}`, {
-        method: 'GET',
-      });
-      if (!resp.ok) return null;
-      const json = await resp.json();
-      const balances: Array<{ asset_type?: string; asset_code?: string; balance?: string }> =
-        Array.isArray(json?.balances) ? json.balances : [];
-      const total = balances
-        .filter(
-          (b) =>
-            (b.asset_type === 'credit_alphanum4' || b.asset_type === 'credit_alphanum12') &&
-            b.asset_code === 'USDC'
-        )
-        .reduce((sum: number, b) => sum + parseFloat(b.balance || '0'), 0);
-      if (json?.created_at) {
-        setOwnerCreatedAt(String(json.created_at));
+      setLoading(true);
+      try {
+        const submit = await submitPreparedTx({
+          network,
+          apiKey,
+          preparePath: '/contracts/vault/revoke-issuer',
+          prepareBody: {
+            owner: walletAddress,
+            issuer: address,
+            sourcePublicKey: walletAddress,
+          },
+          sign: signTransaction,
+        });
+
+        await queryClient.invalidateQueries({
+          queryKey: ['vault', 'dashboard', walletAddress, network],
+        });
+        return { txId: submit.tx_id };
+      } catch (e: unknown) {
+        throw new Error(mapContractErrorToMessage(e));
+      } finally {
+        setLoading(false);
       }
-      const formatted = Number.isFinite(total)
-        ? Math.floor(total).toLocaleString(undefined, { maximumFractionDigits: 0 })
-        : null;
-      return formatted;
-    } catch {
-      return null;
-    }
-  }, [walletAddress, horizonUrl]);
+    },
+    [walletAddress, apiKey, signTransaction, network, queryClient]
+  );
+
+  const revokeCredential = useCallback(
+    async (vcId: string) => {
+      if (!walletAddress) throw new Error('Connect your wallet first');
+      if (!apiKey) throw new Error('API key is required');
+      if (!signTransaction) throw new Error('Signer unavailable');
+      if (!vcId) throw new Error('Credential ID required');
+
+      setLoading(true);
+      try {
+        const submit = await submitPreparedTx({
+          network,
+          apiKey,
+          preparePath: '/contracts/vc/revoke',
+          prepareBody: {
+            vcId,
+            sourcePublicKey: walletAddress,
+          },
+          sign: signTransaction,
+        });
+
+        await queryClient.invalidateQueries({
+          queryKey: ['vault', 'dashboard', walletAddress, network],
+        });
+        return { txId: submit.tx_id };
+      } catch (e: unknown) {
+        throw new Error(mapContractErrorToMessage(e));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [walletAddress, apiKey, signTransaction, network, queryClient]
+  );
 
   const readDashboard = useCallback(async () => {
     if (!walletAddress) {
       return {
         vaultExists: null as boolean | null,
-        xlmBalance: null as string | null,
-        usdcBalance: null as string | null,
         vcIds: null as string[] | null,
         vcs: null as unknown[] | null,
-        ownerCreatedAt: ownerCreatedAt as string | null,
         vcReadError: false as boolean,
       };
     }
-    try {
-      const exists = await checkVaultExists();
-      const balXlm = await fetchXlmBalance();
-      const balUsdc = await fetchUsdcBalance();
-      let ids: string[] = [];
-      let listError = false;
-      try {
-        ids = await fetchVcIdsDirect();
-      } catch (e) {
-        void e;
-        listError = true;
-      }
-      const items: unknown[] = [];
-      for (const id of ids) {
-        try {
-          const vc = await fetchVcDirect(id);
-          if (vc) items.push({ id, ...vc });
-        } catch (e) {
-          void e;
-        }
-      }
+
+    if (!apiKey) {
       return {
-        vaultExists: exists,
-        xlmBalance: balXlm,
-        usdcBalance: balUsdc,
-        vcIds: ids,
-        vcs: items,
-        ownerCreatedAt,
-        vcReadError: listError,
-      };
-    } catch (e) {
-      void e;
-      return {
-        vaultExists: false,
-        xlmBalance: null,
-        usdcBalance: null,
+        vaultExists: null as boolean | null,
         vcIds: [],
         vcs: [],
-        ownerCreatedAt,
         vcReadError: true,
       };
     }
-  }, [
-    walletAddress,
-    checkVaultExists,
-    fetchXlmBalance,
-    fetchUsdcBalance,
-    fetchVcIdsDirect,
-    fetchVcDirect,
-    ownerCreatedAt,
-  ]);
+
+    try {
+      const [exists, idsResp] = await Promise.all([
+        checkVaultExists(),
+        actaFetchJson<{ result: string[] }>({
+          network,
+          apiKey,
+          path: '/contracts/vault/list-vc-ids',
+          body: { owner: walletAddress },
+        }),
+      ]);
+
+      const ids = Array.isArray(idsResp?.result) ? idsResp.result : [];
+
+      const items: unknown[] = [];
+      for (const id of ids) {
+        try {
+          const [vcResp, statusResp] = await Promise.all([
+            actaFetchJson<{ result: unknown }>({
+              network,
+              apiKey,
+              path: '/contracts/vault/get-vc',
+              body: { owner: walletAddress, vcId: id },
+            }),
+            actaFetchJson<{ status: string; since?: string }>({
+              network,
+              apiKey,
+              path: '/contracts/vault/verify-vc',
+              body: { owner: walletAddress, vcId: id },
+            }),
+          ]);
+
+          const vc = vcResp?.result;
+          if (vc) {
+            items.push({ ...vc, status: statusResp.status, since: statusResp.since });
+          }
+        } catch {
+          // ignore individual errors
+        }
+      }
+
+      return {
+        vaultExists: exists,
+        vcIds: ids,
+        vcs: items,
+        vcReadError: false,
+      };
+    } catch {
+      return {
+        vaultExists: null,
+        vcIds: [],
+        vcs: [],
+        vcReadError: true,
+      };
+    }
+  }, [walletAddress, apiKey, network, checkVaultExists]);
 
   const dashboardQuery = useQuery<{
     vaultExists: boolean | null;
-    xlmBalance: string | null;
-    usdcBalance: string | null;
     vcIds: string[] | null;
     vcs: unknown[] | null;
-    ownerCreatedAt: string | null;
     vcReadError: boolean;
   }>({
     queryKey: ['vault', 'dashboard', walletAddress, network],
@@ -260,316 +422,45 @@ export function useVault() {
     staleTime: 10_000,
   });
 
+  const [vaultExists, setVaultExists] = useState<boolean | null>(null);
+  const [vcIds, setVcIds] = useState<string[] | null>(null);
+  const [vcs, setVcs] = useState<unknown[] | null>(null);
+  const [vcReadError, setVcReadError] = useState<boolean>(false);
+
   useEffect(() => {
     const data = dashboardQuery.data;
     if (!data) {
       setVaultExists(null);
-      setXlmBalance(null);
       setVcIds(null);
       setVcs(null);
       setVcReadError(false);
       return;
     }
     setVaultExists(data.vaultExists);
-    setXlmBalance(data.xlmBalance);
-    setUsdcBalance(data.usdcBalance);
     setVcIds(data.vcIds);
     setVcs(data.vcs);
     setVcReadError(!!data.vcReadError);
   }, [dashboardQuery.data]);
 
-  const { createVault: sdkCreateVault } = useCreateVault();
-  const createVault = useCallback(async () => {
-    if (!walletAddress) throw new Error('Connect your wallet first');
-    if (!signTransaction) throw new Error('Signer unavailable');
-    if (!ownerDid) throw new Error('Could not compute owner DID');
-    setLoading(true);
-    try {
-      const { txId } = await sdkCreateVault({ owner: walletAddress, ownerDid, signTransaction });
-      queryClient.setQueryData(
-        ['vault', 'dashboard', walletAddress, network],
-        (prev: { vaultExists?: boolean } | undefined) => ({
-          ...(prev ?? {}),
-          vaultExists: true,
-        })
-      );
-      await queryClient.invalidateQueries({
-        queryKey: ['vault', 'dashboard', walletAddress, network],
-      });
-      await queryClient.refetchQueries({
-        queryKey: ['vault', 'dashboard', walletAddress, network],
-      });
-      return { txId };
-    } catch (e: unknown) {
-      const msg =
-        e instanceof Error
-          ? e.message
-          : typeof e === 'object' && e && 'message' in (e as Record<string, unknown>)
-            ? String((e as Record<string, unknown>).message)
-            : String(e);
-      const friendly = mapContractErrorToMessage(msg);
-      throw new Error(friendly);
-    } finally {
-      setLoading(false);
-    }
-  }, [walletAddress, signTransaction, ownerDid, sdkCreateVault, queryClient, network]);
-
-  const checkSelfAuthorized = useCallback(async (): Promise<boolean> => {
-    if (!walletAddress) return false;
-    const { rpcUrl, networkPassphrase, vaultContractId } = await ensureConfig();
-    if (!vaultContractId) return false;
-    try {
-      const server = new StellarSdk.rpc.Server(rpcUrl);
-      const sourceAccount = await server.getAccount(walletAddress);
-      const account = new StellarSdk.Account(walletAddress, sourceAccount.sequenceNumber());
-      const contract = new StellarSdk.Contract(vaultContractId);
-
-      const tx = new StellarSdk.TransactionBuilder(account, {
-        fee: StellarSdk.BASE_FEE.toString(),
-        networkPassphrase,
-      })
-        .addOperation(
-          contract.call(
-            'authorize_issuer',
-            StellarSdk.Address.fromString(walletAddress).toScVal(),
-            StellarSdk.Address.fromString(walletAddress).toScVal()
-          )
-        )
-        .setTimeout(60)
-        .build();
-
-      const sim = await server.simulateTransaction(tx);
-      const err = (sim as { error?: unknown }).error;
-      if (err && typeof err === 'string') {
-        const friendly = mapContractErrorToMessage(err);
-        if (/already authorized/i.test(friendly)) return true;
-      }
-      return false;
-    } catch {
-      return false;
-    }
-  }, [walletAddress, ensureConfig]);
-
-  const { authorizeIssuer } = useAuthorizeIssuer();
-  const authorizeSelf = useCallback(async () => {
-    if (!walletAddress) throw new Error('Connect your wallet first');
-    if (!signTransaction) throw new Error('Signer unavailable');
-    setLoading(true);
-    try {
-      const { txId } = await authorizeIssuer({
-        owner: walletAddress,
-        issuer: walletAddress,
-        signTransaction,
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ['vault', 'dashboard', walletAddress, network],
-      });
-      await queryClient.refetchQueries({
-        queryKey: ['vault', 'dashboard', walletAddress, network],
-      });
-      return { txId };
-    } catch (e: unknown) {
-      const msg =
-        e instanceof Error
-          ? e.message
-          : typeof e === 'object' && e && 'message' in (e as Record<string, unknown>)
-            ? String((e as Record<string, unknown>).message)
-            : String(e);
-      const friendly = mapContractErrorToMessage(msg);
-      throw new Error(friendly);
-    } finally {
-      setLoading(false);
-    }
-  }, [walletAddress, signTransaction, authorizeIssuer, queryClient, network]);
-
-  const authorizeAddress = useCallback(
-    async (address: string) => {
-      if (!walletAddress) throw new Error('Connect your wallet first');
-      if (!signTransaction) throw new Error('Signer unavailable');
-      if (!address) throw new Error('Address required');
-      setLoading(true);
-      try {
-        const { txId } = await authorizeIssuer({
-          owner: walletAddress,
-          issuer: address,
-          signTransaction,
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ['vault', 'dashboard', walletAddress, network],
-        });
-        await queryClient.refetchQueries({
-          queryKey: ['vault', 'dashboard', walletAddress, network],
-        });
-        return { txId };
-      } catch (e: unknown) {
-        const msg =
-          e instanceof Error
-            ? e.message
-            : typeof e === 'object' && e && 'message' in (e as Record<string, unknown>)
-              ? String((e as Record<string, unknown>).message)
-              : String(e);
-        const friendly = mapContractErrorToMessage(msg);
-        throw new Error(friendly);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [walletAddress, signTransaction, authorizeIssuer, queryClient, network]
-  );
-
-  const revokeAddress = useCallback(
-    async (address: string) => {
-      if (!walletAddress) throw new Error('Connect your wallet first');
-      const { rpcUrl, networkPassphrase, vaultContractId } = await ensureConfig();
-      if (!vaultContractId) throw new Error('Vault contract ID not configured');
-      if (!signTransaction) throw new Error('Signer unavailable');
-      if (!address) throw new Error('Address required');
-      setLoading(true);
-      try {
-        const server = new StellarSdk.rpc.Server(rpcUrl);
-        const sourceAccount = await server.getAccount(walletAddress);
-        const account = new StellarSdk.Account(walletAddress, sourceAccount.sequenceNumber());
-        const contract = new StellarSdk.Contract(vaultContractId);
-
-        let tx = new StellarSdk.TransactionBuilder(account, {
-          fee: StellarSdk.BASE_FEE.toString(),
-          networkPassphrase,
-        })
-          .addOperation(
-            contract.call(
-              'revoke_issuer',
-              StellarSdk.Address.fromString(walletAddress).toScVal(),
-              StellarSdk.Address.fromString(address).toScVal()
-            )
-          )
-          .setTimeout(60)
-          .build();
-
-        tx = await server.prepareTransaction(tx);
-        const signedXdr = await signTransaction(tx.toXDR(), {
-          networkPassphrase,
-        });
-        const signed = StellarSdk.TransactionBuilder.fromXDR(signedXdr, networkPassphrase);
-        const send = await server.sendTransaction(signed);
-        if (
-          send.status === 'PENDING' ||
-          send.status === 'DUPLICATE' ||
-          send.status === 'TRY_AGAIN_LATER'
-        ) {
-          await waitForTx(server, send.hash!);
-        } else if (send.status === 'ERROR') {
-          throw new Error('ERROR');
-        }
-        const txId = send.hash!;
-        await queryClient.invalidateQueries({
-          queryKey: ['vault', 'dashboard', walletAddress, network],
-        });
-        await queryClient.refetchQueries({
-          queryKey: ['vault', 'dashboard', walletAddress, network],
-        });
-        return { txId };
-      } catch (e: unknown) {
-        const msg =
-          e instanceof Error
-            ? e.message
-            : typeof e === 'object' && e && 'message' in (e as Record<string, unknown>)
-              ? String((e as Record<string, unknown>).message)
-              : String(e);
-        const friendly = mapContractErrorToMessage(msg);
-        throw new Error(friendly);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [walletAddress, signTransaction, ensureConfig, queryClient, network]
-  );
-
-  const revokeCredential = useCallback(
-    async (vcId: string) => {
-      if (!walletAddress) throw new Error('Connect your wallet first');
-      if (!signTransaction) throw new Error('Signer unavailable');
-      if (!vcId) throw new Error('Credential ID required');
-      setLoading(true);
-      try {
-        const cfg = client.getDefaults();
-        const issuanceOverride = process.env.NEXT_PUBLIC_ISSUANCE_CONTRACT_ID;
-        const issuanceContractId =
-          issuanceOverride && issuanceOverride.length > 0
-            ? issuanceOverride
-            : cfg.issuanceContractId;
-        if (!issuanceContractId) throw new Error('Issuance contract ID not configured');
-        const server = new StellarSdk.rpc.Server(cfg.rpcUrl);
-        const acct = await server.getAccount(walletAddress);
-        const account = new StellarSdk.Account(walletAddress, acct.sequenceNumber());
-        const contract = new StellarSdk.Contract(issuanceContractId);
-        let tx = new StellarSdk.TransactionBuilder(account, {
-          fee: StellarSdk.BASE_FEE.toString(),
-          networkPassphrase: cfg.networkPassphrase,
-        })
-          .addOperation(
-            contract.call(
-              'revoke',
-              StellarSdk.xdr.ScVal.scvString(vcId),
-              StellarSdk.xdr.ScVal.scvString(new Date().toISOString())
-            )
-          )
-          .setTimeout(60)
-          .build();
-        tx = await server.prepareTransaction(tx);
-        const signedXdr = await signTransaction(tx.toXDR(), {
-          networkPassphrase: cfg.networkPassphrase,
-        });
-        const signed = StellarSdk.TransactionBuilder.fromXDR(signedXdr, cfg.networkPassphrase);
-        const send = await server.sendTransaction(signed);
-        if (
-          send.status === 'PENDING' ||
-          send.status === 'DUPLICATE' ||
-          send.status === 'TRY_AGAIN_LATER'
-        ) {
-          await waitForTx(server, send.hash!);
-        } else if (send.status === 'ERROR') {
-          throw new Error('ERROR');
-        }
-        const txId = send.hash!;
-        await queryClient.invalidateQueries({
-          queryKey: ['vault', 'dashboard', walletAddress, network],
-        });
-        await queryClient.refetchQueries({
-          queryKey: ['vault', 'dashboard', walletAddress, network],
-        });
-        return { txId };
-      } catch (e: unknown) {
-        const msg =
-          e instanceof Error
-            ? e.message
-            : typeof e === 'object' && e && 'message' in (e as Record<string, unknown>)
-              ? String((e as Record<string, unknown>).message)
-              : String(e);
-        const friendly = mapContractErrorToMessage(msg);
-        throw new Error(friendly);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [walletAddress, signTransaction, client, queryClient, network]
-  );
-
   return {
     dashboardStatus: dashboardQuery.status,
     loading,
+
+    // writes
     createVault,
-    checkSelfAuthorized,
     authorizeSelf,
     authorizeAddress,
     revokeAddress,
     revokeCredential,
+
+    // reads
     ownerDid,
     vaultExists,
     vcIds,
     vcs,
-    xlmBalance,
-    usdcBalance,
-    ownerCreatedAt,
     vcReadError,
+
+    // checks
+    checkSelfAuthorized,
   };
 }
