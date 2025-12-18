@@ -1,33 +1,34 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import { useWalletContext } from '@/providers/wallet.provider';
-import { useNetwork } from '@/providers/network.provider';
-import {
-  useTxPrepare,
-  useVaultStore,
-  useActaClient,
-  useCreateCredential,
-} from '@acta-team/acta-sdk';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+
+import { useWalletContext } from '@/providers/wallet.provider';
+import { useNetwork } from '@/providers/network.provider';
 import { mapContractErrorToMessage } from '@/lib/utils';
+import { actaFetchJson } from '@/lib/actaApi';
+
 import { useVault } from '@/components/modules/vault/hooks/use-vault';
+import { useActaApiKey } from '@/components/modules/vault/hooks/use-acta-api-key';
+
 import type { CredentialTemplate, TemplateField } from '@/@types/templates';
 import type { IssueState } from '@/@types/issue';
 import type { MockCredential } from '@/@types/credentials';
+
+type TxPrepareResp = { xdr: string; network: string };
+
+type TxSubmitResp = { tx_id: string };
 
 export function useIssueCredential() {
   const { walletAddress, walletName, signTransaction, walletKit, setWalletInfo } =
     useWalletContext();
   const { network } = useNetwork();
-  const client = useActaClient();
-  const { prepareStore, prepareIssue } = useTxPrepare();
-  const { vaultStore } = useVaultStore();
-  const { createCredential } = useCreateCredential();
 
   const queryClient = useQueryClient();
-  const { checkSelfAuthorized, authorizeSelf } = useVault();
+
+  const { apiKey, setApiKey } = useActaApiKey();
+  const { vaultExists, createVault, checkSelfAuthorized, authorizeSelf } = useVault();
 
   const [state, setState] = useState<IssueState>({
     template: null,
@@ -74,14 +75,14 @@ export function useIssueCredential() {
     }));
   }, []);
 
-  // vcId is generated automatically; do not expose a setter to the user
-
   const buildPreview = useCallback(() => {
     const tpl = state.template;
     if (!tpl) return null;
+
     const nowIso = new Date().toISOString();
     const expiration = state.values['expirationDate'] || undefined;
     const rawSubject = state.values['subject'] || '';
+
     const toSubjectDid = (input: string) => {
       if (!input) return '';
       const trimmed = input.trim();
@@ -89,6 +90,7 @@ export function useIssueCredential() {
       const env = network === 'mainnet' ? 'public' : 'testnet';
       return `did:pkh:stellar:${env}:${trimmed}`;
     };
+
     const subjectId = toSubjectDid(rawSubject);
 
     const credentialSubject: Record<string, string> = { id: subjectId };
@@ -106,11 +108,10 @@ export function useIssueCredential() {
       expirationDate: expiration,
       credentialSubject,
     };
+
     setState((s) => ({ ...s, preview: vc }));
     return vc;
   }, [state.template, state.values, ownerDid, network, state.vcId]);
-
-  // Removed unused helper to satisfy lint rules
 
   const validateRequired = useCallback(
     (fields: TemplateField[]) => {
@@ -127,8 +128,16 @@ export function useIssueCredential() {
   const issue = useCallback(async () => {
     if (!walletAddress) throw new Error('Connect your wallet first');
     if (!signTransaction) throw new Error('Signer unavailable');
+
     const tpl = state.template;
     if (!tpl) throw new Error('Select a template first');
+
+    const trimmedApiKey = apiKey.trim();
+    if (!trimmedApiKey) {
+      const msg = 'API key is required to issue via API.';
+      setState((s) => ({ ...s, error: msg }));
+      throw new Error(msg);
+    }
 
     const requiredErr = validateRequired(tpl.fields);
     if (requiredErr) {
@@ -136,7 +145,7 @@ export function useIssueCredential() {
       throw new Error(requiredErr);
     }
 
-    // Synchronize with the ACTIVE account from the wallet provider
+    // Sync with the active account from wallet provider.
     let activeAddress = walletAddress;
     try {
       const addr = await walletKit?.getAddress();
@@ -144,210 +153,114 @@ export function useIssueCredential() {
         await setWalletInfo(addr.address, walletName || 'Wallet');
         activeAddress = addr.address;
       }
-    } catch {}
+    } catch {
+      // ignore
+    }
+
+    const ownerG = activeAddress;
+    const ownerDidLocal = `did:pkh:stellar:${network === 'mainnet' ? 'public' : 'testnet'}:${ownerG}`;
 
     const vc = buildPreview() || {};
-    const cfg = client.getDefaults();
-    const vaultContractId = cfg.vaultContractId;
-    if (!vaultContractId) throw new Error('Vault contract ID not configured');
 
     setState((s) => ({ ...s, issuing: true, error: null }));
+
     try {
+      // Ensure vault exists before issuing.
+      if (vaultExists === false) {
+        try {
+          await createVault();
+        } catch {
+          // ignore (might have been created in another tab)
+        }
+      }
+
+      // Ensure issuer is authorized in their own vault.
+      try {
+        const isAuth = await checkSelfAuthorized();
+        if (!isAuth) await authorizeSelf();
+      } catch {
+        // ignore
+      }
+
       const ensuredVcId = state.vcId || generateVcId();
       if (!state.vcId) {
         setState((s) => ({ ...s, vcId: ensuredVcId }));
       }
-      const ownerG = activeAddress!;
-      if (ownerG === walletAddress) {
-        try {
-          const isAuth = await checkSelfAuthorized();
-          if (!isAuth) {
-            await authorizeSelf();
-          }
-        } catch {}
-      }
-      const ownerDidLocal = `did:pkh:stellar:${
-        network === 'mainnet' ? 'public' : 'testnet'
-      }:${ownerG}`;
-      const prep = await prepareStore({
-        owner: ownerG,
-        vcId: ensuredVcId,
-        didUri: ownerDidLocal,
-        fields: vc as Record<string, unknown>,
-        vaultContractId,
-        issuer: ownerG,
+
+      // Read config from API (auth required).
+      const cfg = await actaFetchJson<{ networkPassphrase: string; actaContractId: string }>({
+        network,
+        apiKey: trimmedApiKey,
+        method: 'GET',
+        path: '/config',
       });
-      const { signedTxXdr: signedXdr } = await walletKit!.signTransaction(prep.unsignedXdr, {
-        address: ownerG,
-        networkPassphrase: cfg.networkPassphrase,
+
+      // Prepare issuance.
+      const prep = await actaFetchJson<TxPrepareResp>({
+        network,
+        apiKey: trimmedApiKey,
+        path: '/contracts/vc/issue',
+        body: {
+          owner: ownerG,
+          vcId: ensuredVcId,
+          vcData: JSON.stringify(vc),
+          issuer: ownerG,
+          issuerDid: ownerDidLocal,
+          sourcePublicKey: ownerG,
+          contractId: cfg.actaContractId,
+        },
       });
-      const res = await vaultStore({
-        signedXdr,
-        vcId: ensuredVcId,
-        owner: ownerG,
-        vaultContractId,
+
+      const signedXdr = await signTransaction(prep.xdr, {
+        networkPassphrase: prep.network || cfg.networkPassphrase,
       });
-      setState((s) => ({ ...s, issuing: false, txId: res.tx_id }));
-      const explorerNet = network === 'mainnet' ? 'public' : 'testnet';
-      const expertUrl = `https://stellar.expert/explorer/${explorerNet}/tx/${res.tx_id}`;
+
+      const submit = await actaFetchJson<TxSubmitResp>({
+        network,
+        apiKey: trimmedApiKey,
+        path: '/contracts/vc/issue',
+        body: { signedXdr },
+      });
+
+      setState((s) => ({ ...s, issuing: false, txId: submit.tx_id }));
+
+      const net = network === 'mainnet' ? 'public' : 'testnet';
+      const url = `https://stellar.expert/explorer/${net}/tx/${submit.tx_id}`;
+
       toast.success('Credential issued', {
         action: {
-          label: 'View in Stellar Expert',
+          label: 'View on Stellar Expert',
           onClick: () => {
             try {
-              window.open(expertUrl, '_blank');
-            } catch {}
+              window.open(url, '_blank');
+            } catch {
+              // ignore
+            }
           },
         },
       });
 
-      const vcDataStr = JSON.stringify(vc);
-      const prepIssue = await prepareIssue({
-        owner: ownerG,
-        vcId: ensuredVcId,
-        vcData: vcDataStr,
-        vaultContractId,
-        issuer: ownerG,
-        issuerDid: ownerDidLocal,
-      });
-      const { signedTxXdr: signedIssueXdr } = await walletKit!.signTransaction(
-        prepIssue.unsignedXdr,
-        {
-          address: ownerG,
-          networkPassphrase: cfg.networkPassphrase,
-        }
-      );
-      const issueRes = await createCredential({ signedXdr: signedIssueXdr, vcId: ensuredVcId });
-      const issueUrl = `https://stellar.expert/explorer/${explorerNet}/tx/${issueRes.tx_id}`;
-      toast.success('Issuance executed', {
-        action: {
-          label: 'View issuance',
-          onClick: () => {
-            try {
-              window.open(issueUrl, '_blank');
-            } catch {}
-          },
-        },
-      });
       await queryClient.invalidateQueries({
         queryKey: ['vault', 'dashboard', walletAddress, network],
       });
       await queryClient.refetchQueries({
         queryKey: ['vault', 'dashboard', walletAddress, network],
       });
-      return { store: res, issue: issueRes };
+
+      return submit;
     } catch (e: unknown) {
-      const raw = (
+      const raw =
         e && typeof e === 'object' && 'message' in (e as Record<string, unknown>)
           ? String((e as Record<string, unknown>).message)
-          : String(e)
-      ) as string;
+          : String(e);
+
       let friendly = mapContractErrorToMessage(raw);
-      if (
-        /insufficient|no balance|fee|TRY_AGAIN_LATER|Send status: ERROR|Transaction failed/i.test(
-          raw
-        )
-      ) {
-        friendly = 'Insufficient USDC balance to perform the transaction';
+
+      if (/IssuerNotAuthorized|Error\(Contract,\s*#2\)/i.test(raw)) {
+        friendly =
+          'Issuer not authorized in this vault. Go to Authorize and authorize this wallet as issuer.';
       }
-      if (/Error\(Contract,\s*#2\)|IssuerNotAuthorized/i.test(raw)) {
-        let ownerG = walletAddress!;
-        try {
-          const addr = await walletKit?.getAddress();
-          if (addr?.address) ownerG = addr.address;
-        } catch {}
-        if (ownerG === walletAddress) {
-          try {
-            await authorizeSelf();
 
-            const ensuredVcId = state.vcId || generateVcId();
-            if (!state.vcId) {
-              setState((s) => ({ ...s, vcId: ensuredVcId }));
-            }
-            const vcRetry = buildPreview() || {};
-            const cfg = client.getDefaults();
-            const vaultIdOverride =
-              network === 'mainnet'
-                ? process.env.NEXT_PUBLIC_VAULT_CONTRACT_ID_MAINNET || ''
-                : process.env.NEXT_PUBLIC_VAULT_CONTRACT_ID_TESTNET || '';
-            const vaultContractId = vaultIdOverride;
-
-            const ownerDidLocal2 = `did:pkh:stellar:${
-              network === 'mainnet' ? 'public' : 'testnet'
-            }:${ownerG}`;
-            const prep2 = await prepareStore({
-              owner: ownerG,
-              vcId: ensuredVcId,
-              didUri: ownerDidLocal2,
-              fields: vcRetry as Record<string, unknown>,
-              vaultContractId,
-              issuer: ownerG,
-            });
-            const { signedTxXdr: signedXdr2 } = await walletKit!.signTransaction(
-              prep2.unsignedXdr,
-              {
-                address: ownerG,
-                networkPassphrase: cfg.networkPassphrase,
-              }
-            );
-            const res2 = await vaultStore({
-              signedXdr: signedXdr2,
-              vcId: ensuredVcId,
-              owner: ownerG,
-              vaultContractId,
-            });
-
-            const vcDataStr2 = JSON.stringify(vcRetry);
-            const prepIssue2 = await prepareIssue({
-              owner: ownerG,
-              vcId: ensuredVcId,
-              vcData: vcDataStr2,
-              vaultContractId,
-              issuer: ownerG,
-              issuerDid: ownerDidLocal2,
-            });
-            const { signedTxXdr: signedIssueXdr2 } = await walletKit!.signTransaction(
-              prepIssue2.unsignedXdr,
-              {
-                address: ownerG,
-                networkPassphrase: cfg.networkPassphrase,
-              }
-            );
-            const issueRes2 = await createCredential({
-              signedXdr: signedIssueXdr2,
-              vcId: ensuredVcId,
-            });
-
-            toast.success('Issuer automatically authorized and issuance retried.');
-            await queryClient.invalidateQueries({
-              queryKey: ['vault', 'dashboard', walletAddress, network],
-            });
-            await queryClient.refetchQueries({
-              queryKey: ['vault', 'dashboard', walletAddress, network],
-            });
-            setState((s) => ({
-              ...s,
-              issuing: false,
-              error: null,
-              txId: res2.tx_id,
-            }));
-            return { store: res2, issue: issueRes2 };
-          } catch (retryErr: unknown) {
-            const rmsg =
-              retryErr &&
-              typeof retryErr === 'object' &&
-              'message' in (retryErr as Record<string, unknown>)
-                ? String((retryErr as Record<string, unknown>).message)
-                : String(retryErr);
-            friendly = mapContractErrorToMessage(rmsg);
-          }
-        } else {
-          friendly =
-            `The issuer is not authorized in the owner's vault. ` +
-            `Request authorization from the owner (${ownerG}) for your wallet (${walletAddress}). ` +
-            `Use the 'Authorize' section in the dashboard.`;
-        }
-      }
       setState((s) => ({ ...s, issuing: false, error: friendly }));
       toast.error(friendly);
       throw new Error(friendly);
@@ -355,26 +268,26 @@ export function useIssueCredential() {
   }, [
     walletAddress,
     walletName,
-    network,
-    state.template,
-    state.vcId,
-    buildPreview,
-    validateRequired,
-    queryClient,
-    signTransaction,
-    checkSelfAuthorized,
-    authorizeSelf,
     walletKit,
     setWalletInfo,
-    client,
-    prepareStore,
-    vaultStore,
-    prepareIssue,
-    createCredential,
+    signTransaction,
+    network,
+    apiKey,
+    state.template,
+    state.vcId,
+    validateRequired,
+    buildPreview,
+    vaultExists,
+    createVault,
+    checkSelfAuthorized,
+    authorizeSelf,
+    queryClient,
   ]);
 
   return {
     state,
+    apiKey,
+    setApiKey,
     ownerDid,
     selectTemplate,
     setFieldValue,

@@ -9,6 +9,8 @@ import { useVaultCards } from '@/components/modules/vault/hooks/useVaultCards';
 import ShareCredentialModal from '@/components/modules/credentials/ui/ShareCredentialModal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CredentialCard } from '@/components/modules/credentials/ui/SavedCredentialsCard';
+import { useMemo, useState } from 'react';
+import type { Credential } from '@/@types/credentials';
 
 export default function VaultPage() {
   const {
@@ -24,6 +26,20 @@ export default function VaultPage() {
     onRevoke,
   } = useVaultDashboard();
   const { actaById, getWalletFromDid, filteredCredentials, copyToClipboard } = useVaultCards();
+  const [contentOpen, setContentOpen] = useState(false);
+  const [contentCred, setContentCred] = useState<Credential | null>(null);
+
+  const rawJson = useMemo(() => {
+    if (!contentCred) return '';
+    const raw = (contentCred as unknown as { raw?: unknown }).raw;
+    const vaultRecord = (contentCred as unknown as { vaultRecord?: unknown }).vaultRecord;
+    const payload = raw ?? vaultRecord ?? contentCred;
+    try {
+      return JSON.stringify(payload, null, 2);
+    } catch {
+      return String(payload);
+    }
+  }, [contentCred]);
 
   if (vaultExists === false) {
     return (
@@ -149,6 +165,13 @@ export default function VaultPage() {
                   wallet={getWalletFromDid(credential.username)}
                   url={credential.url || undefined}
                   onCopy={(text, label) => copyToClipboard(text, label)}
+                  onView={() => {
+                    const ac = actaById.get(credential.id);
+                    if (ac) {
+                      setContentCred(ac);
+                      setContentOpen(true);
+                    }
+                  }}
                   onShare={() => {
                     const ac = actaById.get(credential.id);
                     if (ac) openShare(ac);
@@ -162,6 +185,50 @@ export default function VaultPage() {
       </div>
       {shareOpen && (
         <ShareCredentialModal open={shareOpen} credential={toShare} onClose={closeShare} />
+      )}
+      {contentOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden p-4">
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => {
+              setContentOpen(false);
+              setContentCred(null);
+            }}
+          />
+          <div className="relative z-10 w-full max-w-3xl max-h-[90vh] rounded-xl border border-zinc-800 bg-black shadow-2xl overflow-hidden flex flex-col">
+            <div className="border-b border-zinc-800 px-6 py-4 flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-white font-semibold text-base sm:text-lg">
+                  Credential content
+                </h2>
+                <p className="text-[11px] sm:text-xs text-zinc-500 mt-0.5 font-mono">
+                  {contentCred?.id || ''}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setContentOpen(false);
+                  setContentCred(null);
+                }}
+                className="text-zinc-400 hover:text-white transition-colors p-1.5 hover:bg-zinc-800/50 rounded-lg"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <pre className="text-xs text-zinc-200 bg-zinc-950/60 border border-zinc-800 rounded-lg p-4 overflow-auto">
+                {rawJson || 'No content available'}
+              </pre>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

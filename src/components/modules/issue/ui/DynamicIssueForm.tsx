@@ -11,6 +11,8 @@ export default function DynamicIssueForm({
   issuing,
   preview,
   error,
+  apiKey,
+  onSetApiKey,
   onSetField,
   onBuildPreview,
   onSubmit,
@@ -21,6 +23,8 @@ export default function DynamicIssueForm({
   issuing: boolean;
   preview: unknown | null;
   error: string | null;
+  apiKey: string;
+  onSetApiKey: (value: string) => void;
   onSetField: (key: string, value: string) => void;
   onBuildPreview: () => void;
   onSubmit: () => Promise<void>;
@@ -113,6 +117,20 @@ export default function DynamicIssueForm({
                   />
                 </div>
               ))}
+
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">API Key *</label>
+              <input
+                type="password"
+                value={apiKey}
+                placeholder="Paste your X-ACTA-Key here"
+                onChange={(e) => onSetApiKey(e.target.value)}
+                className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 text-white placeholder:text-zinc-500 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+              />
+              <p className="mt-2 text-xs text-zinc-500">
+                This is used to call the ACTA API (required for all contract operations).
+              </p>
+            </div>
 
             <div className="pt-4">
               <button

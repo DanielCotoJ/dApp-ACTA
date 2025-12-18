@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@0xpolygonid/js-sdk": "^1.37.2",
-    "@acta-team/acta-sdk": "^1.0.4",
+    "@acta-team/acta-sdk": "^1.0.5",
     "@aztec/bb.js": "3.0.0-nightly.20251104",
     "@creit.tech/stellar-wallets-kit": "^1.9.5",
     "@iden3/js-jwz": "^1.12.1",

@@ -5,7 +5,6 @@ import { WalletProvider } from '@/providers/wallet.provider';
 import { NetworkProvider } from '@/providers/network.provider';
 import { Toaster } from '@/components/ui/sonner';
 import { QueryProvider } from '@/providers/query.provider';
-import { ActaProvider } from '@/providers/acta.provider';
 
 export const metadata: Metadata = {
   title: 'ACTA',
@@ -35,10 +34,8 @@ export default function RootLayout({
         <QueryProvider>
           <NetworkProvider>
             <WalletProvider>
-              <ActaProvider>
-                {children}
-                <Toaster />
-              </ActaProvider>
+              {children}
+              <Toaster />
             </WalletProvider>
           </NetworkProvider>
         </QueryProvider>

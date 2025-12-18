@@ -2,7 +2,7 @@
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy, Share2, Trash2 } from 'lucide-react';
+import { Copy, Share2, Trash2, Eye } from 'lucide-react';
 import Image from 'next/image';
 import { BorderBeam } from '@/components/ui/border-beam';
 import type { CredentialCardProps } from '@/@types/credentials';
@@ -16,6 +16,7 @@ export function CredentialCard({
   onShare,
   status,
   onRevoke,
+  onView,
 }: CredentialCardProps) {
   return (
     <Card className="relative overflow-hidden bg-black border-[#edeed1]/40 min-h-[200px] w-full p-0">
@@ -98,6 +99,18 @@ export function CredentialCard({
             )}
           </div>
           <div className="flex items-center gap-2">
+            {onView && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onView}
+                title="View"
+                aria-label="View"
+                className="h-11 w-11 rounded-xl bg-zinc-900/40 border border-zinc-700/40 hover:bg-zinc-800/40 text-white flex-shrink-0"
+              >
+                <Eye className="w-4 h-4" />
+              </Button>
+            )}
             {onRevoke && (
               <Button
                 variant="ghost"

@@ -27,6 +27,21 @@ export function mapContractErrorToMessage(err: unknown): string {
   if (code === '5' || /VCSAlreadyMigrated/i.test(s)) {
     return 'Credentials already migrated';
   }
+  if (code === '6' || /VCNotFound/i.test(s)) {
+    return 'Credential not found';
+  }
+  if (code === '7' || /VCAlreadyRevoked/i.test(s)) {
+    return 'Credential already revoked';
+  }
+  if (code === '8' || /VaultNotInitialized/i.test(s)) {
+    return 'Vault not initialized';
+  }
+  if (code === '9' || /NotInitialized/i.test(s)) {
+    return 'Contract not initialized';
+  }
+  if (code === '10' || /InvalidVaultContract/i.test(s)) {
+    return 'Invalid vault contract';
+  }
 
   if (/FAILED/i.test(s)) return 'Transaction failed';
   if (/ERROR/i.test(s)) return 'Transaction error';
@@ -34,7 +49,6 @@ export function mapContractErrorToMessage(err: unknown): string {
 
   if (/Connect your wallet first/i.test(s)) return 'Connect your wallet first';
   if (/Signer unavailable/i.test(s)) return 'Signer unavailable';
-  if (/Missing NEXT_PUBLIC_VAULT_CONTRACT_ID/i.test(s)) return 'Vault contract ID not configured';
 
   if (s.trim()) return `Unexpected error: ${s.trim()}`;
 

@@ -26,6 +26,11 @@ export function AppSidebar() {
       icon: <Home className="h-5 w-5 shrink-0 text-neutral-200" />,
     },
     {
+      label: 'API Keys',
+      href: '/dashboard/api-keys',
+      icon: <KeyRound className="h-5 w-5 shrink-0 text-neutral-200" />,
+    },
+    {
       label: 'Issue',
       href: '/dashboard/issue',
       icon: <FilePlus className="h-5 w-5 shrink-0 text-neutral-200" />,
@@ -44,11 +49,6 @@ export function AppSidebar() {
       label: 'Tutorials',
       href: '/dashboard/tutorials',
       icon: <Book className="h-5 w-5 shrink-0 text-neutral-200" />,
-    },
-    {
-      label: 'API Keys',
-      href: '/dashboard/api-keys',
-      icon: <KeyRound className="h-5 w-5 shrink-0 text-neutral-200" />,
     },
   ];
   return (

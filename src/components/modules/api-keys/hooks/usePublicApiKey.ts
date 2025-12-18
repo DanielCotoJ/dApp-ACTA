@@ -4,12 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useNetwork } from '@/providers/network.provider';
 import { useWalletContext } from '@/providers/wallet.provider';
 import type { PublicApiKeyResponse } from '@/@types/api-keys';
-
-function getActaApiBaseUrl(network: 'testnet' | 'mainnet') {
-  return network === 'mainnet'
-    ? 'https://acta.build/api/mainnet'
-    : 'https://acta.build/api/testnet';
-}
+import { getActaApiBaseUrl, setStoredApiKey } from '@/lib/actaApi';
 
 export function usePublicApiKey() {
   const { network } = useNetwork();
@@ -77,6 +72,8 @@ export function usePublicApiKey() {
 
         const typed = json as PublicApiKeyResponse;
         setData(typed);
+        // Store API key for the current network to be used across the app.
+        setStoredApiKey(network, typed.api_key);
         return typed;
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);

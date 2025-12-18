@@ -58,6 +58,8 @@ function adaptVcToCredential(vc: unknown): Credential {
     expirationDate: expirationDate ? String(expirationDate) : null,
     status,
     birthDate: birthDate ? String(birthDate) : undefined,
+    raw: parsed,
+    vaultRecord: obj,
   };
 }
 
