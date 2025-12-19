@@ -240,11 +240,29 @@ export function useIssueCredential() {
         },
       });
 
+      // Wait a bit for the transaction to be confirmed on-chain
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Invalidate all vault dashboard queries to ensure fresh data
+      // This handles cases where ownerG might differ from walletAddress
       await queryClient.invalidateQueries({
-        queryKey: ['vault', 'dashboard', walletAddress, network],
+        queryKey: ['vault', 'dashboard'],
       });
+
+      // Also specifically invalidate for both addresses to be safe
+      if (ownerG !== walletAddress) {
+        await queryClient.invalidateQueries({
+          queryKey: ['vault', 'dashboard', walletAddress, network],
+        });
+      }
+
+      await queryClient.invalidateQueries({
+        queryKey: ['vault', 'dashboard', ownerG, network],
+      });
+
+      // Force refetch all dashboard queries
       await queryClient.refetchQueries({
-        queryKey: ['vault', 'dashboard', walletAddress, network],
+        queryKey: ['vault', 'dashboard'],
       });
 
       return submit;

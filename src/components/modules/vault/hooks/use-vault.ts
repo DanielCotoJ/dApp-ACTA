@@ -419,7 +419,10 @@ export function useVault() {
     queryKey: ['vault', 'dashboard', walletAddress, network],
     queryFn: readDashboard,
     enabled: !!walletAddress,
-    staleTime: 10_000,
+    staleTime: 0, // Always consider data stale to ensure fresh fetches
+    refetchOnMount: typeof window !== 'undefined', // Only refetch on mount in client
+    refetchOnWindowFocus: typeof window !== 'undefined', // Only refetch on focus in client
+    refetchInterval: typeof window !== 'undefined' ? 30_000 : false, // Poll every 30 seconds only on client
   });
 
   const [vaultExists, setVaultExists] = useState<boolean | null>(null);
@@ -442,6 +445,24 @@ export function useVault() {
     setVcReadError(!!data.vcReadError);
   }, [dashboardQuery.data]);
 
+  // Force refetch when wallet address changes (only on client, after mount)
+  useEffect(() => {
+    // Only run on client side after hydration
+    if (typeof window === 'undefined') return;
+
+    if (walletAddress) {
+      // Use requestAnimationFrame to ensure this runs after React hydration
+      const rafId = requestAnimationFrame(() => {
+        // Small delay to ensure DOM is fully hydrated
+        setTimeout(() => {
+          void dashboardQuery.refetch();
+        }, 100);
+      });
+      return () => cancelAnimationFrame(rafId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [walletAddress]); // Only refetch when walletAddress changes
+
   return {
     dashboardStatus: dashboardQuery.status,
     loading,
@@ -462,5 +483,8 @@ export function useVault() {
 
     // checks
     checkSelfAuthorized,
+
+    // refetch
+    refetchDashboard: dashboardQuery.refetch,
   };
 }
