@@ -29,11 +29,17 @@ export function usePublicApiKey() {
       setData(null);
 
       try {
+        if (!walletAddress) {
+          throw new Error(
+            'Wallet address is required to create an API key. Please connect your wallet first.'
+          );
+        }
+
         const payload = {
           ...(params?.name ? { name: params.name } : {}),
+          wallet_address: walletAddress,
           metadata: {
             ...(params?.metadata ?? {}),
-            ...(walletAddress ? { wallet_address: walletAddress } : {}),
             requested_from: 'dapp-acta',
             network,
           },
