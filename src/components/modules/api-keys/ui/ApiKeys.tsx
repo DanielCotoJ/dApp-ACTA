@@ -112,7 +112,13 @@ export default function ApiKeys() {
               type="button"
               className="h-11 bg-white hover:bg-white/90 text-black font-medium rounded-lg"
               disabled={loading || !!data?.api_key || !walletAddress}
-              onClick={() => requestStandardKey({ name: name.trim() || undefined })}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!loading && !data?.api_key && walletAddress) {
+                  requestStandardKey({ name: name.trim() || undefined });
+                }
+              }}
             >
               {loading
                 ? 'Creating…'
