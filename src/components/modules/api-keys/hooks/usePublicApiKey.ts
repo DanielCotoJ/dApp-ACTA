@@ -10,7 +10,26 @@ export function usePublicApiKey() {
   const { network } = useNetwork();
   const { walletAddress } = useWalletContext();
 
-  const baseUrl = useMemo(() => getActaApiBaseUrl(network), [network]);
+  // For API key creation, we need to use the direct instance URLs
+  // Since there's a proxy that rewrites URLs, we use the direct Railway instance URLs
+  // Each instance is already configured for its specific network, so we use /public/api-keys
+  const baseUrl = useMemo(() => {
+    // Use environment variables if available (these should point directly to Railway instances)
+    const envKey =
+      network === 'mainnet'
+        ? process.env.NEXT_PUBLIC_ACTA_API_BASE_URL_MAINNET
+        : process.env.NEXT_PUBLIC_ACTA_API_BASE_URL_TESTNET;
+
+    if (envKey && typeof envKey === 'string' && envKey.trim()) {
+      return envKey.trim().replace(/\/$/, '');
+    }
+
+    // Use direct Railway instance URLs to bypass proxy URL rewriting
+    // These URLs point directly to the specific network instance
+    return network === 'mainnet'
+      ? 'https://api.mainnet.acta.build'
+      : 'https://api.testnet.acta.build';
+  }, [network]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,9 +47,22 @@ export function usePublicApiKey() {
     async (params?: { name?: string; metadata?: Record<string, unknown> }) => {
       // Prevent multiple simultaneous requests
       if (isRequesting || loading) {
-        console.warn('[usePublicApiKey] Request already in progress, ignoring duplicate call');
+        console.warn('[usePublicApiKey] Request already in progress, ignoring duplicate call', {
+          isRequesting,
+          loading,
+          timestamp: new Date().toISOString(),
+        });
         return null;
       }
+
+      // Generate a unique request ID on the frontend to track duplicate requests
+      const frontendRequestId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      console.log('[usePublicApiKey] Starting request:', {
+        frontendRequestId,
+        isRequesting,
+        loading,
+        timestamp: new Date().toISOString(),
+      });
 
       setIsRequesting(true);
       setLoading(true);
@@ -51,6 +83,7 @@ export function usePublicApiKey() {
             ...(params?.metadata ?? {}),
             requested_from: 'dapp-acta',
             network,
+            frontend_request_id: frontendRequestId, // Track from frontend
           },
         };
 
@@ -61,7 +94,41 @@ export function usePublicApiKey() {
           payload,
         });
 
-        const resp = await fetch(`${baseUrl}/public/api-keys`, {
+        // Use the network-specific endpoint with direct Railway instance URLs
+        // This bypasses the proxy at acta.build/api that was rewriting URLs
+        // We use /{network}/public/api-keys as documented in api/docs/endpoints.md (lines 43-51)
+        const endpoint = `/${network}/public/api-keys`;
+        const fullUrl = `${baseUrl}${endpoint}`;
+
+        // Validate that we're using the correct instance URL for the network
+        const expectedDomain =
+          network === 'mainnet' ? 'api.mainnet.acta.build' : 'api.testnet.acta.build';
+        if (!fullUrl.includes(expectedDomain)) {
+          console.error('[usePublicApiKey] ERROR: URL does not point to correct instance!', {
+            baseUrl,
+            endpoint,
+            fullUrl,
+            network,
+            expectedDomain,
+          });
+          throw new Error(`Invalid URL: must use ${expectedDomain} for ${network}`);
+        }
+
+        // Validate that the endpoint includes the network prefix
+        if (!endpoint.includes(`/${network}/public/api-keys`)) {
+          console.error('[usePublicApiKey] ERROR: Endpoint does not include network prefix!', {
+            endpoint,
+            network,
+          });
+          throw new Error(`Invalid endpoint: must include /${network}/public/api-keys`);
+        }
+
+        console.log('[usePublicApiKey] Full URL:', fullUrl);
+        console.log('[usePublicApiKey] Endpoint:', endpoint);
+        console.log('[usePublicApiKey] Base URL:', baseUrl);
+        console.log('[usePublicApiKey] Network:', network);
+
+        const resp = await fetch(fullUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
