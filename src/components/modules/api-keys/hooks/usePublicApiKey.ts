@@ -15,15 +15,24 @@ export function usePublicApiKey() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<PublicApiKeyResponse | null>(null);
+  const [isRequesting, setIsRequesting] = useState(false);
 
   const reset = useCallback(() => {
     setError(null);
     setData(null);
     setLoading(false);
+    setIsRequesting(false);
   }, []);
 
   const requestStandardKey = useCallback(
     async (params?: { name?: string; metadata?: Record<string, unknown> }) => {
+      // Prevent multiple simultaneous requests
+      if (isRequesting || loading) {
+        console.warn('[usePublicApiKey] Request already in progress, ignoring duplicate call');
+        return null;
+      }
+
+      setIsRequesting(true);
       setLoading(true);
       setError(null);
       setData(null);
@@ -44,6 +53,13 @@ export function usePublicApiKey() {
             network,
           },
         };
+
+        console.log('[usePublicApiKey] Creating API key:', {
+          baseUrl,
+          network,
+          walletAddress,
+          payload,
+        });
 
         const resp = await fetch(`${baseUrl}/public/api-keys`, {
           method: 'POST',
@@ -83,13 +99,15 @@ export function usePublicApiKey() {
         return typed;
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
+        console.error('[usePublicApiKey] Error creating API key:', msg);
         setError(msg || 'Failed to create API key');
         return null;
       } finally {
         setLoading(false);
+        setIsRequesting(false);
       }
     },
-    [baseUrl, network, walletAddress]
+    [baseUrl, network, walletAddress, isRequesting, loading]
   );
 
   return {
