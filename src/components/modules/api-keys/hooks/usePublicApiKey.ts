@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useNetwork } from '@/providers/network.provider';
 import { useWalletContext } from '@/providers/wallet.provider';
 import type { PublicApiKeyResponse } from '@/@types/api-keys';
-import { getActaApiBaseUrl, setStoredApiKey } from '@/lib/actaApi';
+import { setStoredApiKey } from '@/lib/actaApi';
 
 export function usePublicApiKey() {
   const { network } = useNetwork();

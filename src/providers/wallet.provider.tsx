@@ -6,8 +6,6 @@ import {
   WalletNetwork,
   FREIGHTER_ID,
   FreighterModule,
-  AlbedoModule,
-  xBullModule,
 } from '@creit.tech/stellar-wallets-kit';
 import {
   WalletConnectModule,
