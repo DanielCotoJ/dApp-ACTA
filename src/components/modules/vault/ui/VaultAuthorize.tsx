@@ -19,7 +19,7 @@ export function VaultAuthorize() {
     loading,
     isSelfAuthorized,
   } = useVaultAuthorize();
-  
+
   const { network } = useNetwork();
   const { apiKey, setApiKey } = useActaApiKey();
   const [customApiKey, setCustomApiKey] = useState('');
@@ -29,7 +29,7 @@ export function VaultAuthorize() {
   const handleCustomApiKeyChange = async (value: string) => {
     setCustomApiKey(value);
     setKeyValidationError(null);
-    
+
     if (value.trim()) {
       setValidatingKey(true);
       try {
@@ -86,7 +86,8 @@ export function VaultAuthorize() {
         <div>
           <h3 className="text-lg font-semibold">API Key Personalizada (Opcional)</h3>
           <p className="text-sm text-neutral-600 dark:text-neutral-400">
-            Si tienes una API key early o custom proporcionada por el equipo, puedes usarla aquí en lugar de generar una nueva.
+            Si tienes una API key early o custom proporcionada por el equipo, puedes usarla aquí en
+            lugar de generar una nueva.
           </p>
         </div>
         <div className="space-y-2">
@@ -98,12 +99,8 @@ export function VaultAuthorize() {
             className="w-full"
             disabled={validatingKey}
           />
-          {keyValidationError && (
-            <p className="text-sm text-red-500">{keyValidationError}</p>
-          )}
-          {validatingKey && (
-            <p className="text-sm text-neutral-500">Validando API key...</p>
-          )}
+          {keyValidationError && <p className="text-sm text-red-500">{keyValidationError}</p>}
+          {validatingKey && <p className="text-sm text-neutral-500">Validando API key...</p>}
           {customApiKey.trim() && !keyValidationError && !validatingKey && (
             <p className="text-sm text-green-500">✓ API key válida</p>
           )}
@@ -141,7 +138,11 @@ export function VaultAuthorize() {
               onChange={(e) => setAddressInput(e.target.value)}
               className="flex-1 min-w-0"
             />
-            <Button onClick={onAuthorizeAddress} disabled={loading || validatingKey} className="rounded-md">
+            <Button
+              onClick={onAuthorizeAddress}
+              disabled={loading || validatingKey}
+              className="rounded-md"
+            >
               {loading ? 'Authorizing...' : 'Authorize'}
             </Button>
           </div>

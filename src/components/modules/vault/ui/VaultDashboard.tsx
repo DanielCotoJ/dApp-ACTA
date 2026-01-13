@@ -32,7 +32,7 @@ export default function VaultPage() {
   const { actaById, getWalletFromDid, filteredCredentials, copyToClipboard } = useVaultCards();
   const [contentOpen, setContentOpen] = useState(false);
   const [contentCred, setContentCred] = useState<Credential | null>(null);
-  
+
   const { network } = useNetwork();
   const { apiKey, setApiKey } = useActaApiKey();
   const [customApiKey, setCustomApiKey] = useState('');
@@ -54,7 +54,7 @@ export default function VaultPage() {
   const handleCustomApiKeyChange = async (value: string) => {
     setCustomApiKey(value);
     setKeyValidationError(null);
-    
+
     if (value.trim()) {
       setValidatingKey(true);
       try {
@@ -98,14 +98,15 @@ export default function VaultPage() {
               Create your vault to view your credentials
             </p>
           </div>
-          
+
           {/* Custom API Key Input */}
           <Card className="p-6 mb-6 max-w-2xl mx-auto">
             <div className="space-y-3">
               <div>
                 <h3 className="text-lg font-semibold mb-2">API Key Personalizada (Opcional)</h3>
                 <p className="text-sm text-muted-foreground">
-                  Si tienes una API key early o custom proporcionada por el equipo, puedes usarla aquí en lugar de generar una nueva.
+                  Si tienes una API key early o custom proporcionada por el equipo, puedes usarla
+                  aquí en lugar de generar una nueva.
                 </p>
               </div>
               <div className="space-y-2">
@@ -117,9 +118,7 @@ export default function VaultPage() {
                   className="w-full"
                   disabled={validatingKey}
                 />
-                {keyValidationError && (
-                  <p className="text-sm text-red-500">{keyValidationError}</p>
-                )}
+                {keyValidationError && <p className="text-sm text-red-500">{keyValidationError}</p>}
                 {validatingKey && (
                   <p className="text-sm text-muted-foreground">Validando API key...</p>
                 )}
@@ -129,7 +128,7 @@ export default function VaultPage() {
               </div>
             </div>
           </Card>
-          
+
           <div className="flex items-center justify-center">
             <Button
               onClick={handleCreateVault}

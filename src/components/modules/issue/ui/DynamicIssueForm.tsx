@@ -48,7 +48,7 @@ export default function DynamicIssueForm({
     onSetApiKey(value);
     setKeyValidationError(null);
     setKeyValidated(false);
-    
+
     if (value.trim()) {
       setValidatingKey(true);
       try {
@@ -150,7 +150,8 @@ export default function DynamicIssueForm({
 
             <div>
               <label className="block text-sm font-medium text-white mb-2">
-                API Key * {keyValidated && <span className="text-green-500 text-xs">✓ Validada</span>}
+                API Key *{' '}
+                {keyValidated && <span className="text-green-500 text-xs">✓ Validada</span>}
               </label>
               <input
                 type="password"
@@ -163,11 +164,10 @@ export default function DynamicIssueForm({
               {keyValidationError && (
                 <p className="mt-2 text-xs text-red-400">{keyValidationError}</p>
               )}
-              {validatingKey && (
-                <p className="mt-2 text-xs text-zinc-500">Validando API key...</p>
-              )}
+              {validatingKey && <p className="mt-2 text-xs text-zinc-500">Validando API key...</p>}
               <p className="mt-2 text-xs text-zinc-500">
-                Si tienes una API key early o custom proporcionada por el equipo, puedes usarla aquí. De lo contrario, genera una desde la página de API Keys.
+                Si tienes una API key early o custom proporcionada por el equipo, puedes usarla
+                aquí. De lo contrario, genera una desde la página de API Keys.
               </p>
             </div>
 
