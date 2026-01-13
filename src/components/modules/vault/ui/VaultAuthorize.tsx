@@ -40,7 +40,7 @@ export function VaultAuthorize() {
         } else {
           setKeyValidationError(validation.error || 'Invalid API key');
         }
-      } catch (error) {
+      } catch {
         setKeyValidationError('Failed to validate API key');
       } finally {
         setValidatingKey(false);

@@ -7,7 +7,6 @@ import { useEffect } from 'react';
 
 // Mainnet support is now enabled.
 // Keep the warning copy to remind users they're using real funds.
-const TEMP_DISABLE_MAINNET = false;
 
 type Props = {
   open: boolean;

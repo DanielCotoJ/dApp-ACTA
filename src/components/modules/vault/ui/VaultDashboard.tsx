@@ -73,7 +73,7 @@ export default function VaultPage() {
         } else {
           setKeyValidationError(validation.error || 'Invalid API key');
         }
-      } catch (error) {
+      } catch {
         setKeyValidationError('Failed to validate API key');
       } finally {
         setValidatingKey(false);
@@ -83,6 +83,15 @@ export default function VaultPage() {
       setApiKey(apiKey);
     }
   };
+
+  // Clear customApiKey when wallet disconnects or changes
+  useEffect(() => {
+    if (!walletAddress) {
+      setCustomApiKey('');
+      setKeyValidationError(null);
+      setValidatingKey(false);
+    }
+  }, [walletAddress]);
 
   // Refetch vault status when API key changes
   useEffect(() => {
@@ -96,13 +105,8 @@ export default function VaultPage() {
   }, [apiKey, refetchDashboard]);
 
   const handleCreateVault = async () => {
-    // CRITICAL: API key is REQUIRED - this should never execute without it
-    if (!apiKey || apiKey.trim() === '') {
-      toast.error(
-        'API key is required. Please generate an API key from the API Keys page or enter a custom API key above.'
-      );
-      return;
-    }
+    // The button is only enabled when we have a valid API key (either apiKey or validated customApiKey)
+    // So if button is enabled, we can proceed directly
     await onCreateVault();
   };
 
@@ -185,7 +189,10 @@ export default function VaultPage() {
           <div className="flex items-center justify-center">
             <Button
               onClick={handleCreateVault}
-              disabled={!apiKey || apiKey.trim() === '' || validatingKey || !!keyValidationError}
+              disabled={
+                (!apiKey || apiKey.trim() === '') &&
+                (!customApiKey.trim() || !!keyValidationError || validatingKey)
+              }
               className="w-full md:w-1/2 h-12 bg-white hover:bg-white/90 text-black font-semibold shadow-lg shadow-white/10 hover:shadow-xl hover:shadow-white/20 transition-all duration-300 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Create Vault
