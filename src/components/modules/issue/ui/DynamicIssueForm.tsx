@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import type { CredentialTemplate } from '@/@types/templates';
 import Image from 'next/image';
+import { validateApiKey } from '@/lib/actaApi';
+import { useNetwork } from '@/providers/network.provider';
+import { toast } from 'sonner';
 
 export default function DynamicIssueForm({
   template,
@@ -31,11 +34,38 @@ export default function DynamicIssueForm({
 }) {
   void vcId;
   void preview;
+  const { network } = useNetwork();
   const [hasExpiration, setHasExpiration] = useState(false);
+  const [validatingKey, setValidatingKey] = useState(false);
+  const [keyValidationError, setKeyValidationError] = useState<string | null>(null);
+  const [keyValidated, setKeyValidated] = useState(false);
 
   useEffect(() => {
     onBuildPreview();
   }, [template, values, onBuildPreview]);
+
+  const handleApiKeyChange = async (value: string) => {
+    onSetApiKey(value);
+    setKeyValidationError(null);
+    setKeyValidated(false);
+    
+    if (value.trim()) {
+      setValidatingKey(true);
+      try {
+        const validation = await validateApiKey(value.trim(), network);
+        if (validation.valid) {
+          setKeyValidated(true);
+          toast.success('API key validated');
+        } else {
+          setKeyValidationError(validation.error || 'Invalid API key');
+        }
+      } catch (error) {
+        setKeyValidationError('Failed to validate API key');
+      } finally {
+        setValidatingKey(false);
+      }
+    }
+  };
 
   void template;
 
@@ -119,16 +149,25 @@ export default function DynamicIssueForm({
               ))}
 
             <div>
-              <label className="block text-sm font-medium text-white mb-2">API Key *</label>
+              <label className="block text-sm font-medium text-white mb-2">
+                API Key * {keyValidated && <span className="text-green-500 text-xs">✓ Validada</span>}
+              </label>
               <input
                 type="password"
                 value={apiKey}
-                placeholder="Paste your X-ACTA-Key here"
-                onChange={(e) => onSetApiKey(e.target.value)}
-                className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 text-white placeholder:text-zinc-500 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+                placeholder="Pega tu API key aquí (puede ser una key personalizada early/custom)"
+                onChange={(e) => handleApiKeyChange(e.target.value)}
+                disabled={validatingKey}
+                className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 text-white placeholder:text-zinc-500 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all disabled:opacity-50"
               />
+              {keyValidationError && (
+                <p className="mt-2 text-xs text-red-400">{keyValidationError}</p>
+              )}
+              {validatingKey && (
+                <p className="mt-2 text-xs text-zinc-500">Validando API key...</p>
+              )}
               <p className="mt-2 text-xs text-zinc-500">
-                This is used to call the ACTA API (required for all contract operations).
+                Si tienes una API key early o custom proporcionada por el equipo, puedes usarla aquí. De lo contrario, genera una desde la página de API Keys.
               </p>
             </div>
 

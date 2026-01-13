@@ -463,6 +463,32 @@ export function useVault() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [walletAddress]); // Only refetch when walletAddress changes
 
+  // Listen for API key creation events to invalidate cache and refetch vault status
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleApiKeyCreated = (event: CustomEvent) => {
+      const eventNetwork = event.detail?.network;
+      // Only refetch if the event is for the current network
+      if (!eventNetwork || eventNetwork === network) {
+        // Invalidate all vault queries to force fresh check
+        queryClient.invalidateQueries({
+          queryKey: ['vault', 'dashboard'],
+        });
+        // Small delay to ensure API key is stored in localStorage
+        setTimeout(() => {
+          void dashboardQuery.refetch();
+        }, 200);
+      }
+    };
+
+    window.addEventListener('acta-api-key-created', handleApiKeyCreated as EventListener);
+    return () => {
+      window.removeEventListener('acta-api-key-created', handleApiKeyCreated as EventListener);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [network, queryClient]);
+
   return {
     dashboardStatus: dashboardQuery.status,
     loading,

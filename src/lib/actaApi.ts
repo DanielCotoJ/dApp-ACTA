@@ -83,3 +83,32 @@ export async function actaFetchJson<T>(params: {
 
   return json as T;
 }
+
+/**
+ * Validates if an API key exists and is valid by calling the /config endpoint
+ * This endpoint requires authentication, so if it succeeds, the API key is valid
+ */
+export async function validateApiKey(
+  apiKey: string,
+  network: ActaNetwork
+): Promise<{ valid: boolean; error?: string }> {
+  if (!apiKey || !apiKey.trim()) {
+    return { valid: false, error: 'API key is required' };
+  }
+
+  try {
+    await actaFetchJson<{ rpcUrl: string; networkPassphrase: string; actaContractId: string }>({
+      network,
+      apiKey: apiKey.trim(),
+      method: 'GET',
+      path: '/config',
+    });
+    return { valid: true };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('unauthorized') || errorMessage.includes('Invalid')) {
+      return { valid: false, error: 'Invalid or inactive API key' };
+    }
+    return { valid: false, error: errorMessage };
+  }
+}

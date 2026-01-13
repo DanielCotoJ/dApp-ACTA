@@ -11,6 +11,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CredentialCard } from '@/components/modules/credentials/ui/SavedCredentialsCard';
 import { useMemo, useState } from 'react';
 import type { Credential } from '@/@types/credentials';
+import { useActaApiKey } from '@/components/modules/vault/hooks/use-acta-api-key';
+import { validateApiKey } from '@/lib/actaApi';
+import { useNetwork } from '@/providers/network.provider';
+import { toast } from 'sonner';
 
 export default function VaultPage() {
   const {
@@ -28,6 +32,12 @@ export default function VaultPage() {
   const { actaById, getWalletFromDid, filteredCredentials, copyToClipboard } = useVaultCards();
   const [contentOpen, setContentOpen] = useState(false);
   const [contentCred, setContentCred] = useState<Credential | null>(null);
+  
+  const { network } = useNetwork();
+  const { apiKey, setApiKey } = useActaApiKey();
+  const [customApiKey, setCustomApiKey] = useState('');
+  const [validatingKey, setValidatingKey] = useState(false);
+  const [keyValidationError, setKeyValidationError] = useState<string | null>(null);
 
   const rawJson = useMemo(() => {
     if (!contentCred) return '';
@@ -41,6 +51,41 @@ export default function VaultPage() {
     }
   }, [contentCred]);
 
+  const handleCustomApiKeyChange = async (value: string) => {
+    setCustomApiKey(value);
+    setKeyValidationError(null);
+    
+    if (value.trim()) {
+      setValidatingKey(true);
+      try {
+        const validation = await validateApiKey(value.trim(), network);
+        if (validation.valid) {
+          setApiKey(value.trim());
+          toast.success('API key validated and set');
+        } else {
+          setKeyValidationError(validation.error || 'Invalid API key');
+        }
+      } catch (error) {
+        setKeyValidationError('Failed to validate API key');
+      } finally {
+        setValidatingKey(false);
+      }
+    } else {
+      // If empty, use the stored API key
+      setApiKey(apiKey);
+    }
+  };
+
+  const handleCreateVault = async () => {
+    // Use custom API key if provided, otherwise use stored one
+    const keyToUse = customApiKey.trim() || apiKey;
+    if (!keyToUse) {
+      toast.error('API key is required to create vault');
+      return;
+    }
+    await onCreateVault();
+  };
+
   if (vaultExists === false) {
     return (
       <div className="min-h-screen bg-background text-foreground">
@@ -53,10 +98,43 @@ export default function VaultPage() {
               Create your vault to view your credentials
             </p>
           </div>
+          
+          {/* Custom API Key Input */}
+          <Card className="p-6 mb-6 max-w-2xl mx-auto">
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">API Key Personalizada (Opcional)</h3>
+                <p className="text-sm text-muted-foreground">
+                  Si tienes una API key early o custom proporcionada por el equipo, puedes usarla aquí en lugar de generar una nueva.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Input
+                  type="password"
+                  placeholder="Pega tu API key personalizada aquí (early/custom)"
+                  value={customApiKey}
+                  onChange={(e) => handleCustomApiKeyChange(e.target.value)}
+                  className="w-full"
+                  disabled={validatingKey}
+                />
+                {keyValidationError && (
+                  <p className="text-sm text-red-500">{keyValidationError}</p>
+                )}
+                {validatingKey && (
+                  <p className="text-sm text-muted-foreground">Validando API key...</p>
+                )}
+                {customApiKey.trim() && !keyValidationError && !validatingKey && (
+                  <p className="text-sm text-green-500">✓ API key válida</p>
+                )}
+              </div>
+            </div>
+          </Card>
+          
           <div className="flex items-center justify-center">
             <Button
-              onClick={onCreateVault}
-              className="w-full md:w-1/2 h-12 bg-white hover:bg-white/90 text-black font-semibold shadow-lg shadow-white/10 hover:shadow-xl hover:shadow-white/20 transition-all duration-300 rounded-xl"
+              onClick={handleCreateVault}
+              disabled={validatingKey || (!customApiKey.trim() && !apiKey)}
+              className="w-full md:w-1/2 h-12 bg-white hover:bg-white/90 text-black font-semibold shadow-lg shadow-white/10 hover:shadow-xl hover:shadow-white/20 transition-all duration-300 rounded-xl disabled:opacity-50"
             >
               Create Vault
             </Button>

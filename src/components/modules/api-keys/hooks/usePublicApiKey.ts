@@ -163,6 +163,14 @@ export function usePublicApiKey() {
         setData(typed);
         // Store API key for the current network to be used across the app.
         setStoredApiKey(network, typed.api_key);
+        
+        // Force a page reload or trigger vault status refresh after API key is created
+        // This ensures the vault existence check runs with the new API key
+        // Dispatch a custom event that useVault can listen to
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('acta-api-key-created', { detail: { network } }));
+        }
+        
         return typed;
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
