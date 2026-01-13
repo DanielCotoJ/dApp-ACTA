@@ -98,7 +98,9 @@ export default function VaultPage() {
   const handleCreateVault = async () => {
     // CRITICAL: API key is REQUIRED - this should never execute without it
     if (!apiKey || apiKey.trim() === '') {
-      toast.error('API key is required. Please generate an API key from the API Keys page or enter a custom API key above.');
+      toast.error(
+        'API key is required. Please generate an API key from the API Keys page or enter a custom API key above.'
+      );
       return;
     }
     await onCreateVault();
@@ -144,7 +146,8 @@ export default function VaultPage() {
                 <div>
                   <h3 className="text-lg font-semibold mb-1 text-red-400">API Key Required</h3>
                   <p className="text-sm text-red-300/90">
-                    You cannot create a vault without an API key. Please generate an API key from the API Keys page or enter a custom API key below.
+                    You cannot create a vault without an API key. Please generate an API key from
+                    the API Keys page or enter a custom API key below.
                   </p>
                 </div>
               </div>
