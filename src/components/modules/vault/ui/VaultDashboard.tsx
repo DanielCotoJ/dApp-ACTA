@@ -9,14 +9,17 @@ import { useVaultCards } from '@/components/modules/vault/hooks/useVaultCards';
 import ShareCredentialModal from '@/components/modules/credentials/ui/ShareCredentialModal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CredentialCard } from '@/components/modules/credentials/ui/SavedCredentialsCard';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { Credential } from '@/@types/credentials';
 import { useActaApiKey } from '@/components/modules/vault/hooks/use-acta-api-key';
 import { validateApiKey } from '@/lib/actaApi';
 import { useNetwork } from '@/providers/network.provider';
 import { toast } from 'sonner';
+import { useVault } from '@/components/modules/vault/hooks/use-vault';
+import { useWalletContext } from '@/providers/wallet.provider';
 
 export default function VaultPage() {
+  const { walletAddress } = useWalletContext();
   const {
     vaultExists,
     onCreateVault,
@@ -38,6 +41,7 @@ export default function VaultPage() {
   const [customApiKey, setCustomApiKey] = useState('');
   const [validatingKey, setValidatingKey] = useState(false);
   const [keyValidationError, setKeyValidationError] = useState<string | null>(null);
+  const { refetchDashboard } = useVault();
 
   const rawJson = useMemo(() => {
     if (!contentCred) return '';
@@ -62,6 +66,10 @@ export default function VaultPage() {
         if (validation.valid) {
           setApiKey(value.trim());
           toast.success('API key validated and set');
+          // Refetch vault status after setting the API key
+          setTimeout(() => {
+            void refetchDashboard();
+          }, 200);
         } else {
           setKeyValidationError(validation.error || 'Invalid API key');
         }
@@ -76,43 +84,63 @@ export default function VaultPage() {
     }
   };
 
+  // Refetch vault status when API key changes
+  useEffect(() => {
+    if (apiKey && walletAddress) {
+      const timer = setTimeout(() => {
+        void refetchDashboard();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiKey, refetchDashboard]);
+
   const handleCreateVault = async () => {
     // Use custom API key if provided, otherwise use stored one
     const keyToUse = customApiKey.trim() || apiKey;
     if (!keyToUse) {
-      toast.error('API key is required to create vault');
+      toast.error(
+        'API key is required to create vault. Please generate an API key from the API Keys page or enter a custom API key above.',
+        { duration: 5000 }
+      );
       return;
     }
     await onCreateVault();
   };
 
-  if (vaultExists === false) {
+  // Show create vault screen if:
+  // 1. Vault doesn't exist (vaultExists === false), OR
+  // 2. We can't determine vault status because there's no API key yet (vaultExists === null && !apiKey)
+  // This ensures new wallets see the create vault screen immediately
+  const shouldShowCreateVault = vaultExists === false || (vaultExists === null && !apiKey && !customApiKey.trim());
+
+  if (shouldShowCreateVault) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
+      <div className="min-h-screen">
         <div className="p-8">
           <div className="mb-12">
             <div className="flex items-center justify-between mb-2">
-              <h1 className="text-5xl font-bold tracking-tight">Vault</h1>
+              <h1 className="text-5xl font-bold tracking-tight text-white">Vault</h1>
             </div>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-white/50 text-lg">
               Create your vault to view your credentials
             </p>
           </div>
 
           {/* Custom API Key Input */}
-          <Card className="p-6 mb-6 max-w-2xl mx-auto">
+          <Card className="p-6 mb-6 max-w-2xl mx-auto bg-card border-[#edeed1]/30">
             <div className="space-y-3">
               <div>
-                <h3 className="text-lg font-semibold mb-2">API Key Personalizada (Opcional)</h3>
-                <p className="text-sm text-muted-foreground">
-                  Si tienes una API key early o custom proporcionada por el equipo, puedes usarla
-                  aquí en lugar de generar una nueva.
+                <h3 className="text-lg font-semibold mb-2 text-white">Custom API Key (Optional)</h3>
+                <p className="text-sm text-white/60">
+                  If you have an early or custom API key provided by the team, you can use it here
+                  instead of generating a new one.
                 </p>
               </div>
               <div className="space-y-2">
                 <Input
                   type="password"
-                  placeholder="Pega tu API key personalizada aquí (early/custom)"
+                  placeholder="Paste your custom API key here (early/custom)"
                   value={customApiKey}
                   onChange={(e) => handleCustomApiKeyChange(e.target.value)}
                   className="w-full"
@@ -120,10 +148,10 @@ export default function VaultPage() {
                 />
                 {keyValidationError && <p className="text-sm text-red-500">{keyValidationError}</p>}
                 {validatingKey && (
-                  <p className="text-sm text-muted-foreground">Validando API key...</p>
+                  <p className="text-sm text-white/60">Validating API key...</p>
                 )}
                 {customApiKey.trim() && !keyValidationError && !validatingKey && (
-                  <p className="text-sm text-green-500">✓ API key válida</p>
+                  <p className="text-sm text-green-500">✓ API key valid</p>
                 )}
               </div>
             </div>
@@ -144,7 +172,7 @@ export default function VaultPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen">
       <div>
         <div className="border-b border-white/10 backdrop-blur-xl">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">

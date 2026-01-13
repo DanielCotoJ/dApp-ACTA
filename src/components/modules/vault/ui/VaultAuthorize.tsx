@@ -84,25 +84,25 @@ export function VaultAuthorize() {
       {/* Custom API Key Input */}
       <Card className="p-6 space-y-3">
         <div>
-          <h3 className="text-lg font-semibold">API Key Personalizada (Opcional)</h3>
+          <h3 className="text-lg font-semibold">Custom API Key (Optional)</h3>
           <p className="text-sm text-neutral-600 dark:text-neutral-400">
-            Si tienes una API key early o custom proporcionada por el equipo, puedes usarla aquí en
-            lugar de generar una nueva.
+            If you have an early or custom API key provided by the team, you can use it here
+            instead of generating a new one.
           </p>
         </div>
         <div className="space-y-2">
           <Input
             type="password"
-            placeholder="Pega tu API key personalizada aquí (early/custom)"
+            placeholder="Paste your custom API key here (early/custom)"
             value={customApiKey}
             onChange={(e) => handleCustomApiKeyChange(e.target.value)}
             className="w-full"
             disabled={validatingKey}
           />
           {keyValidationError && <p className="text-sm text-red-500">{keyValidationError}</p>}
-          {validatingKey && <p className="text-sm text-neutral-500">Validando API key...</p>}
+          {validatingKey && <p className="text-sm text-neutral-500">Validating API key...</p>}
           {customApiKey.trim() && !keyValidationError && !validatingKey && (
-            <p className="text-sm text-green-500">✓ API key válida</p>
+            <p className="text-sm text-green-500">✓ API key valid</p>
           )}
         </div>
       </Card>

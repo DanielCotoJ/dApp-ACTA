@@ -151,12 +151,12 @@ export default function DynamicIssueForm({
             <div>
               <label className="block text-sm font-medium text-white mb-2">
                 API Key *{' '}
-                {keyValidated && <span className="text-green-500 text-xs">✓ Validada</span>}
+                {keyValidated && <span className="text-green-500 text-xs">✓ Validated</span>}
               </label>
               <input
                 type="password"
                 value={apiKey}
-                placeholder="Pega tu API key aquí (puede ser una key personalizada early/custom)"
+                placeholder="Paste your API key here (can be a custom early/custom key)"
                 onChange={(e) => handleApiKeyChange(e.target.value)}
                 disabled={validatingKey}
                 className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 text-white placeholder:text-zinc-500 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all disabled:opacity-50"
@@ -164,10 +164,10 @@ export default function DynamicIssueForm({
               {keyValidationError && (
                 <p className="mt-2 text-xs text-red-400">{keyValidationError}</p>
               )}
-              {validatingKey && <p className="mt-2 text-xs text-zinc-500">Validando API key...</p>}
+              {validatingKey && <p className="mt-2 text-xs text-zinc-500">Validating API key...</p>}
               <p className="mt-2 text-xs text-zinc-500">
-                Si tienes una API key early o custom proporcionada por el equipo, puedes usarla
-                aquí. De lo contrario, genera una desde la página de API Keys.
+                If you have an early or custom API key provided by the team, you can use it here.
+                Otherwise, generate one from the API Keys page.
               </p>
             </div>
 
