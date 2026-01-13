@@ -112,7 +112,8 @@ export default function VaultPage() {
   // 1. Vault doesn't exist (vaultExists === false), OR
   // 2. We can't determine vault status because there's no API key yet (vaultExists === null && !apiKey)
   // This ensures new wallets see the create vault screen immediately
-  const shouldShowCreateVault = vaultExists === false || (vaultExists === null && !apiKey && !customApiKey.trim());
+  const shouldShowCreateVault =
+    vaultExists === false || (vaultExists === null && !apiKey && !customApiKey.trim());
 
   if (shouldShowCreateVault) {
     return (
@@ -122,9 +123,7 @@ export default function VaultPage() {
             <div className="flex items-center justify-between mb-2">
               <h1 className="text-5xl font-bold tracking-tight text-white">Vault</h1>
             </div>
-            <p className="text-white/50 text-lg">
-              Create your vault to view your credentials
-            </p>
+            <p className="text-white/50 text-lg">Create your vault to view your credentials</p>
           </div>
 
           {/* Custom API Key Input */}
@@ -147,9 +146,7 @@ export default function VaultPage() {
                   disabled={validatingKey}
                 />
                 {keyValidationError && <p className="text-sm text-red-500">{keyValidationError}</p>}
-                {validatingKey && (
-                  <p className="text-sm text-white/60">Validating API key...</p>
-                )}
+                {validatingKey && <p className="text-sm text-white/60">Validating API key...</p>}
                 {customApiKey.trim() && !keyValidationError && !validatingKey && (
                   <p className="text-sm text-green-500">✓ API key valid</p>
                 )}

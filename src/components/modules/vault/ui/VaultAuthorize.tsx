@@ -86,8 +86,8 @@ export function VaultAuthorize() {
         <div>
           <h3 className="text-lg font-semibold">Custom API Key (Optional)</h3>
           <p className="text-sm text-neutral-600 dark:text-neutral-400">
-            If you have an early or custom API key provided by the team, you can use it here
-            instead of generating a new one.
+            If you have an early or custom API key provided by the team, you can use it here instead
+            of generating a new one.
           </p>
         </div>
         <div className="space-y-2">
