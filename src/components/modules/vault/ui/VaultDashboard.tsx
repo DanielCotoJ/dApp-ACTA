@@ -96,24 +96,20 @@ export default function VaultPage() {
   }, [apiKey, refetchDashboard]);
 
   const handleCreateVault = async () => {
-    // Use custom API key if provided, otherwise use stored one
-    const keyToUse = customApiKey.trim() || apiKey;
-    if (!keyToUse) {
-      toast.error(
-        'API key is required to create vault. Please generate an API key from the API Keys page or enter a custom API key above.',
-        { duration: 5000 }
-      );
+    // CRITICAL: API key is REQUIRED - this should never execute without it
+    if (!apiKey || apiKey.trim() === '') {
+      toast.error('API key is required. Please generate an API key from the API Keys page or enter a custom API key above.');
       return;
     }
     await onCreateVault();
   };
 
-  // Show create vault screen if:
-  // 1. Vault doesn't exist (vaultExists === false), OR
-  // 2. We can't determine vault status because there's no API key yet (vaultExists === null && !apiKey)
-  // This ensures new wallets see the create vault screen immediately
-  const shouldShowCreateVault =
-    vaultExists === false || (vaultExists === null && !apiKey && !customApiKey.trim());
+  // Show create vault screen ALWAYS when vault doesn't exist
+  // This ensures new wallets ALWAYS see the create vault screen immediately
+  const shouldShowCreateVault = vaultExists === false || vaultExists === null;
+
+  // Check if API key is missing
+  const hasNoApiKey = !apiKey && !customApiKey.trim();
 
   if (shouldShowCreateVault) {
     return (
@@ -125,6 +121,35 @@ export default function VaultPage() {
             </div>
             <p className="text-white/50 text-lg">Create your vault to view your credentials</p>
           </div>
+
+          {/* Alert when no API key */}
+          {hasNoApiKey && (
+            <Card className="p-6 mb-6 max-w-2xl mx-auto bg-red-500/10 border-red-500/50">
+              <div className="flex items-start gap-3">
+                <div className="shrink-0 mt-0.5">
+                  <svg
+                    className="w-5 h-5 text-red-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-1 text-red-400">API Key Required</h3>
+                  <p className="text-sm text-red-300/90">
+                    You cannot create a vault without an API key. Please generate an API key from the API Keys page or enter a custom API key below.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          )}
 
           {/* Custom API Key Input */}
           <Card className="p-6 mb-6 max-w-2xl mx-auto bg-card border-[#edeed1]/30">
@@ -157,8 +182,8 @@ export default function VaultPage() {
           <div className="flex items-center justify-center">
             <Button
               onClick={handleCreateVault}
-              disabled={validatingKey || (!customApiKey.trim() && !apiKey)}
-              className="w-full md:w-1/2 h-12 bg-white hover:bg-white/90 text-black font-semibold shadow-lg shadow-white/10 hover:shadow-xl hover:shadow-white/20 transition-all duration-300 rounded-xl disabled:opacity-50"
+              disabled={!apiKey || apiKey.trim() === '' || validatingKey || !!keyValidationError}
+              className="w-full md:w-1/2 h-12 bg-white hover:bg-white/90 text-black font-semibold shadow-lg shadow-white/10 hover:shadow-xl hover:shadow-white/20 transition-all duration-300 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Create Vault
             </Button>
