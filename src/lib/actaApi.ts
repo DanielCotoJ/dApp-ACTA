@@ -5,8 +5,7 @@
  *
  * The backend enforces API key authentication for all endpoints except:
  * - GET /health
- * - POST /testnet/public/api-keys
- * - POST /mainnet/public/api-keys
+ * - POST /public/api-keys
  */
 
 export type ActaNetwork = 'testnet' | 'mainnet';

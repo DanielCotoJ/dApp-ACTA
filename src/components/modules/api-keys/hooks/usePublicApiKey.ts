@@ -94,34 +94,10 @@ export function usePublicApiKey() {
           payload,
         });
 
-        // Use the network-specific endpoint with direct Railway instance URLs
-        // This bypasses the proxy at acta.build/api that was rewriting URLs
-        // We use /{network}/public/api-keys as documented in api/docs/endpoints.md (lines 43-51)
-        const endpoint = `/${network}/public/api-keys`;
+        // Base URL is already network-specific (e.g. https://acta.build/api/testnet or api.testnet.acta.build)
+        // Endpoint is /public/api-keys (no network in path)
+        const endpoint = '/public/api-keys';
         const fullUrl = `${baseUrl}${endpoint}`;
-
-        // Validate that we're using the correct instance URL for the network
-        const expectedDomain =
-          network === 'mainnet' ? 'api.mainnet.acta.build' : 'api.testnet.acta.build';
-        if (!fullUrl.includes(expectedDomain)) {
-          console.error('[usePublicApiKey] ERROR: URL does not point to correct instance!', {
-            baseUrl,
-            endpoint,
-            fullUrl,
-            network,
-            expectedDomain,
-          });
-          throw new Error(`Invalid URL: must use ${expectedDomain} for ${network}`);
-        }
-
-        // Validate that the endpoint includes the network prefix
-        if (!endpoint.includes(`/${network}/public/api-keys`)) {
-          console.error('[usePublicApiKey] ERROR: Endpoint does not include network prefix!', {
-            endpoint,
-            network,
-          });
-          throw new Error(`Invalid endpoint: must include /${network}/public/api-keys`);
-        }
 
         console.log('[usePublicApiKey] Full URL:', fullUrl);
         console.log('[usePublicApiKey] Endpoint:', endpoint);
