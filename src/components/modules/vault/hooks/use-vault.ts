@@ -8,7 +8,6 @@ import { useWalletContext } from '@/providers/wallet.provider';
 import { useNetwork } from '@/providers/network.provider';
 import { mapContractErrorToMessage } from '@/lib/utils';
 import { actaFetchJson } from '@/lib/actaApi';
-import { useActaApiKey } from '@/components/modules/vault/hooks/use-acta-api-key';
 
 type ApiConfig = {
   rpcUrl: string;
@@ -18,7 +17,7 @@ type ApiConfig = {
 
 type TxPrepareResponse = { xdr: string; network: string };
 
-async function fetchApiConfig(params: { network: 'testnet' | 'mainnet'; apiKey: string }) {
+async function fetchApiConfig(params: { network: 'testnet' | 'mainnet'; apiKey?: string }) {
   return actaFetchJson<ApiConfig>({
     network: params.network,
     apiKey: params.apiKey,
@@ -29,7 +28,7 @@ async function fetchApiConfig(params: { network: 'testnet' | 'mainnet'; apiKey: 
 
 async function submitPreparedTx(params: {
   network: 'testnet' | 'mainnet';
-  apiKey: string;
+  apiKey?: string;
   preparePath: string;
   prepareBody: unknown;
   sign: (xdr: string, opts: { networkPassphrase: string }) => Promise<string>;
@@ -61,7 +60,6 @@ async function submitPreparedTx(params: {
 export function useVault() {
   const { walletAddress, signTransaction } = useWalletContext();
   const { network } = useNetwork();
-  const { apiKey } = useActaApiKey();
 
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
@@ -75,22 +73,19 @@ export function useVault() {
   }, [walletAddress, network]);
 
   const ensureConfig = useCallback(async () => {
-    if (!apiKey) throw new Error('API key is required');
     if (config) return config;
-    const cfg = await fetchApiConfig({ network, apiKey });
+    const cfg = await fetchApiConfig({ network });
     setConfig(cfg);
     return cfg;
-  }, [apiKey, config, network]);
+  }, [config, network]);
 
   useEffect(() => {
-    // Reset cached config when API key or network changes.
     setConfig(null);
-  }, [apiKey, network]);
+  }, [network]);
 
   const checkVaultExists = useCallback(async (): Promise<boolean | null> => {
     if (!walletAddress) return null;
     if (!ownerDid) return null;
-    if (!apiKey) return null;
 
     const cfg = await ensureConfig();
 
@@ -132,11 +127,10 @@ export function useVault() {
 
     // If no error, the call would succeed => vault exists.
     return true;
-  }, [walletAddress, ownerDid, apiKey, ensureConfig]);
+  }, [walletAddress, ownerDid, ensureConfig]);
 
   const checkSelfAuthorized = useCallback(async (): Promise<boolean> => {
     if (!walletAddress) return false;
-    if (!apiKey) return false;
 
     const cfg = await ensureConfig();
 
@@ -169,19 +163,17 @@ export function useVault() {
     }
 
     return false;
-  }, [walletAddress, apiKey, ensureConfig]);
+  }, [walletAddress, ensureConfig]);
 
   const createVault = useCallback(async () => {
     if (!walletAddress) throw new Error('Connect your wallet first');
     if (!ownerDid) throw new Error('Could not compute owner DID');
-    if (!apiKey) throw new Error('API key is required');
     if (!signTransaction) throw new Error('Signer unavailable');
 
     setLoading(true);
     try {
       const submit = await submitPreparedTx({
         network,
-        apiKey,
         preparePath: '/contracts/vault/create',
         prepareBody: {
           owner: walletAddress,
@@ -202,18 +194,16 @@ export function useVault() {
     } finally {
       setLoading(false);
     }
-  }, [walletAddress, ownerDid, apiKey, signTransaction, network, queryClient]);
+  }, [walletAddress, ownerDid, signTransaction, network, queryClient]);
 
   const authorizeSelf = useCallback(async () => {
     if (!walletAddress) throw new Error('Connect your wallet first');
-    if (!apiKey) throw new Error('API key is required');
     if (!signTransaction) throw new Error('Signer unavailable');
 
     setLoading(true);
     try {
       const submit = await submitPreparedTx({
         network,
-        apiKey,
         preparePath: '/contracts/vault/authorize-issuer',
         prepareBody: {
           owner: walletAddress,
@@ -232,12 +222,11 @@ export function useVault() {
     } finally {
       setLoading(false);
     }
-  }, [walletAddress, apiKey, signTransaction, network, queryClient]);
+  }, [walletAddress, signTransaction, network, queryClient]);
 
   const authorizeAddress = useCallback(
     async (address: string) => {
       if (!walletAddress) throw new Error('Connect your wallet first');
-      if (!apiKey) throw new Error('API key is required');
       if (!signTransaction) throw new Error('Signer unavailable');
       if (!address) throw new Error('Address required');
 
@@ -245,7 +234,6 @@ export function useVault() {
       try {
         const submit = await submitPreparedTx({
           network,
-          apiKey,
           preparePath: '/contracts/vault/authorize-issuer',
           prepareBody: {
             owner: walletAddress,
@@ -265,13 +253,12 @@ export function useVault() {
         setLoading(false);
       }
     },
-    [walletAddress, apiKey, signTransaction, network, queryClient]
+    [walletAddress, signTransaction, network, queryClient]
   );
 
   const revokeAddress = useCallback(
     async (address: string) => {
       if (!walletAddress) throw new Error('Connect your wallet first');
-      if (!apiKey) throw new Error('API key is required');
       if (!signTransaction) throw new Error('Signer unavailable');
       if (!address) throw new Error('Address required');
 
@@ -279,7 +266,6 @@ export function useVault() {
       try {
         const submit = await submitPreparedTx({
           network,
-          apiKey,
           preparePath: '/contracts/vault/revoke-issuer',
           prepareBody: {
             owner: walletAddress,
@@ -299,13 +285,12 @@ export function useVault() {
         setLoading(false);
       }
     },
-    [walletAddress, apiKey, signTransaction, network, queryClient]
+    [walletAddress, signTransaction, network, queryClient]
   );
 
   const revokeCredential = useCallback(
     async (vcId: string) => {
       if (!walletAddress) throw new Error('Connect your wallet first');
-      if (!apiKey) throw new Error('API key is required');
       if (!signTransaction) throw new Error('Signer unavailable');
       if (!vcId) throw new Error('Credential ID required');
 
@@ -313,7 +298,6 @@ export function useVault() {
       try {
         const submit = await submitPreparedTx({
           network,
-          apiKey,
           preparePath: '/contracts/vc/revoke',
           prepareBody: {
             vcId,
@@ -332,7 +316,7 @@ export function useVault() {
         setLoading(false);
       }
     },
-    [walletAddress, apiKey, signTransaction, network, queryClient]
+    [walletAddress, signTransaction, network, queryClient]
   );
 
   const readDashboard = useCallback(async () => {
@@ -345,26 +329,22 @@ export function useVault() {
       };
     }
 
-    if (!apiKey) {
-      return {
-        vaultExists: null as boolean | null,
-        vcIds: [],
-        vcs: [],
-        vcReadError: true,
-      };
-    }
-
     try {
-      const [exists, idsResp] = await Promise.all([
-        checkVaultExists(),
-        actaFetchJson<{ result: string[] }>({
-          network,
-          apiKey,
-          path: '/contracts/vault/list-vc-ids',
-          body: { owner: walletAddress },
-        }),
-      ]);
+      const exists = await checkVaultExists();
+      if (exists !== true) {
+        return {
+          vaultExists: exists,
+          vcIds: [],
+          vcs: [],
+          vcReadError: false,
+        };
+      }
 
+      const idsResp = await actaFetchJson<{ result: string[] }>({
+        network,
+        path: '/contracts/vault/list-vc-ids',
+        body: { owner: walletAddress },
+      });
       const ids = Array.isArray(idsResp?.result) ? idsResp.result : [];
 
       const items: unknown[] = [];
@@ -373,13 +353,11 @@ export function useVault() {
           const [vcResp, statusResp] = await Promise.all([
             actaFetchJson<{ result: unknown }>({
               network,
-              apiKey,
               path: '/contracts/vault/get-vc',
               body: { owner: walletAddress, vcId: id },
             }),
             actaFetchJson<{ status: string; since?: string }>({
               network,
-              apiKey,
               path: '/contracts/vault/verify-vc',
               body: { owner: walletAddress, vcId: id },
             }),
@@ -395,7 +373,7 @@ export function useVault() {
       }
 
       return {
-        vaultExists: exists,
+        vaultExists: true,
         vcIds: ids,
         vcs: items,
         vcReadError: false,
@@ -408,7 +386,7 @@ export function useVault() {
         vcReadError: true,
       };
     }
-  }, [walletAddress, apiKey, network, checkVaultExists]);
+  }, [walletAddress, network, checkVaultExists]);
 
   const dashboardQuery = useQuery<{
     vaultExists: boolean | null;
