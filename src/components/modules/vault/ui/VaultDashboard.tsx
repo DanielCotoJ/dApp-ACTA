@@ -11,10 +11,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CredentialCard } from '@/components/modules/credentials/ui/SavedCredentialsCard';
 import { useMemo, useState, useEffect } from 'react';
 import type { Credential } from '@/@types/credentials';
-import { useActaApiKey } from '@/components/modules/vault/hooks/use-acta-api-key';
-import { validateApiKey } from '@/lib/actaApi';
-import { useNetwork } from '@/providers/network.provider';
-import { toast } from 'sonner';
 import { useVault } from '@/components/modules/vault/hooks/use-vault';
 import { useWalletContext } from '@/providers/wallet.provider';
 
@@ -35,13 +31,10 @@ export default function VaultPage() {
   const { actaById, getWalletFromDid, filteredCredentials, copyToClipboard } = useVaultCards();
   const [contentOpen, setContentOpen] = useState(false);
   const [contentCred, setContentCred] = useState<Credential | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
-  const { network } = useNetwork();
-  const { apiKey, setApiKey } = useActaApiKey();
-  const [customApiKey, setCustomApiKey] = useState('');
-  const [validatingKey, setValidatingKey] = useState(false);
-  const [keyValidationError, setKeyValidationError] = useState<string | null>(null);
-  const { refetchDashboard } = useVault();
+  const { refetchDashboard, loading: creatingVault } = useVault();
+  const showCreatingLoader = isCreating || creatingVault;
 
   const rawJson = useMemo(() => {
     if (!contentCred) return '';
@@ -55,69 +48,54 @@ export default function VaultPage() {
     }
   }, [contentCred]);
 
-  const handleCustomApiKeyChange = async (value: string) => {
-    setCustomApiKey(value);
-    setKeyValidationError(null);
-
-    if (value.trim()) {
-      setValidatingKey(true);
-      try {
-        const validation = await validateApiKey(value.trim(), network);
-        if (validation.valid) {
-          setApiKey(value.trim());
-          toast.success('API key validated and set');
-          // Refetch vault status after setting the API key
-          setTimeout(() => {
-            void refetchDashboard();
-          }, 200);
-        } else {
-          setKeyValidationError(validation.error || 'Invalid API key');
-        }
-      } catch {
-        setKeyValidationError('Failed to validate API key');
-      } finally {
-        setValidatingKey(false);
-      }
-    } else {
-      // If empty, use the stored API key
-      setApiKey(apiKey);
-    }
-  };
-
-  // Clear customApiKey when wallet disconnects or changes
-  useEffect(() => {
-    if (!walletAddress) {
-      setCustomApiKey('');
-      setKeyValidationError(null);
-      setValidatingKey(false);
-    }
-  }, [walletAddress]);
-
-  // Refetch vault status when API key changes
-  useEffect(() => {
-    if (apiKey && walletAddress) {
-      const timer = setTimeout(() => {
-        void refetchDashboard();
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiKey, refetchDashboard]);
-
   const handleCreateVault = async () => {
-    // The button is only enabled when we have a valid API key (either apiKey or validated customApiKey)
-    // So if button is enabled, we can proceed directly
-    await onCreateVault();
+    setIsCreating(true);
+    try {
+      await onCreateVault();
+    } finally {
+      setIsCreating(false);
+    }
   };
 
-  // Show create vault screen ALWAYS when vault doesn't exist
-  // This ensures new wallets ALWAYS see the create vault screen immediately
-  const shouldShowCreateVault = vaultExists === false || vaultExists === null;
+  if (!walletAddress) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center text-white/70">
+          <p className="text-lg">Connect your wallet to view your vault</p>
+        </div>
+      </div>
+    );
+  }
 
-  // Check if API key is missing
-  const hasNoApiKey = !apiKey && !customApiKey.trim();
+  // Still loading vault status (wallet connected but we don't know yet if vault exists)
+  const isCheckingVault = vaultExists === null && dashboardStatus === 'pending';
+  // Show create vault only when we know for sure the vault does NOT exist
+  const shouldShowCreateVault = vaultExists === false;
+
+  if (isCheckingVault) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#edeed1] border-r-transparent mb-4" />
+          <p className="text-white/70">Checking vault...</p>
+          <p className="text-sm text-white/50 mt-1">Detecting if your wallet has a vault</p>
+        </div>
+      </div>
+    );
+  }
 
   if (shouldShowCreateVault) {
+    if (showCreatingLoader) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#edeed1] border-r-transparent mb-4" />
+            <p className="text-white/70">Creating vault...</p>
+            <p className="text-sm text-white/50 mt-1">Please sign the transaction in your wallet</p>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen">
         <div className="p-8">
@@ -125,74 +103,13 @@ export default function VaultPage() {
             <div className="flex items-center justify-between mb-2">
               <h1 className="text-5xl font-bold tracking-tight text-white">Vault</h1>
             </div>
-            <p className="text-white/50 text-lg">Create your vault to view your credentials</p>
+            <p className="text-white/50 text-lg">Create your vault to store and view your credentials</p>
           </div>
-
-          {/* Alert when no API key */}
-          {hasNoApiKey && (
-            <Card className="p-6 mb-6 max-w-2xl mx-auto bg-red-500/10 border-red-500/50">
-              <div className="flex items-start gap-3">
-                <div className="shrink-0 mt-0.5">
-                  <svg
-                    className="w-5 h-5 text-red-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold mb-1 text-red-400">API Key Required</h3>
-                  <p className="text-sm text-red-300/90">
-                    You cannot create a vault without an API key. Please generate an API key from
-                    the API Keys page or enter a custom API key below.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {/* Custom API Key Input */}
-          <Card className="p-6 mb-6 max-w-2xl mx-auto bg-card border-[#edeed1]/30">
-            <div className="space-y-3">
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-white">Custom API Key (Optional)</h3>
-                <p className="text-sm text-white/60">
-                  If you have an early or custom API key provided by the team, you can use it here
-                  instead of generating a new one.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Input
-                  type="password"
-                  placeholder="Paste your custom API key here (early/custom)"
-                  value={customApiKey}
-                  onChange={(e) => handleCustomApiKeyChange(e.target.value)}
-                  className="w-full"
-                  disabled={validatingKey}
-                />
-                {keyValidationError && <p className="text-sm text-red-500">{keyValidationError}</p>}
-                {validatingKey && <p className="text-sm text-white/60">Validating API key...</p>}
-                {customApiKey.trim() && !keyValidationError && !validatingKey && (
-                  <p className="text-sm text-green-500">✓ API key valid</p>
-                )}
-              </div>
-            </div>
-          </Card>
 
           <div className="flex items-center justify-center">
             <Button
               onClick={handleCreateVault}
-              disabled={
-                (!apiKey || apiKey.trim() === '') &&
-                (!customApiKey.trim() || !!keyValidationError || validatingKey)
-              }
+              disabled={false}
               className="w-full md:w-1/2 h-12 bg-white hover:bg-white/90 text-black font-semibold shadow-lg shadow-white/10 hover:shadow-xl hover:shadow-white/20 transition-all duration-300 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Create Vault
