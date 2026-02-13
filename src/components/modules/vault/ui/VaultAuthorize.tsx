@@ -69,11 +69,7 @@ export function VaultAuthorize() {
               onChange={(e) => setAddressInput(e.target.value)}
               className="flex-1 min-w-0"
             />
-            <Button
-              onClick={onAuthorizeAddress}
-              disabled={loading}
-              className="rounded-md"
-            >
+            <Button onClick={onAuthorizeAddress} disabled={loading} className="rounded-md">
               {loading ? 'Authorizing...' : 'Authorize'}
             </Button>
           </div>

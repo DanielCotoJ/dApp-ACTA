@@ -9,7 +9,7 @@ import { useVaultCards } from '@/components/modules/vault/hooks/useVaultCards';
 import ShareCredentialModal from '@/components/modules/credentials/ui/ShareCredentialModal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CredentialCard } from '@/components/modules/credentials/ui/SavedCredentialsCard';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import type { Credential } from '@/@types/credentials';
 import { useVault } from '@/components/modules/vault/hooks/use-vault';
 import { useWalletContext } from '@/providers/wallet.provider';
@@ -33,7 +33,7 @@ export default function VaultPage() {
   const [contentCred, setContentCred] = useState<Credential | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  const { refetchDashboard, loading: creatingVault } = useVault();
+  const { loading: creatingVault } = useVault();
   const showCreatingLoader = isCreating || creatingVault;
 
   const rawJson = useMemo(() => {
@@ -103,7 +103,9 @@ export default function VaultPage() {
             <div className="flex items-center justify-between mb-2">
               <h1 className="text-5xl font-bold tracking-tight text-white">Vault</h1>
             </div>
-            <p className="text-white/50 text-lg">Create your vault to store and view your credentials</p>
+            <p className="text-white/50 text-lg">
+              Create your vault to store and view your credentials
+            </p>
           </div>
 
           <div className="flex items-center justify-center">
