@@ -1,8 +1,11 @@
 'use client';
 import type { CredentialTemplate } from '@/@types/templates';
+import { useCustomTemplates } from './useCustomTemplates';
 
 export function useCredentialTemplates() {
-  const templates: CredentialTemplate[] = [
+  const { customTemplates, saveTemplate, deleteTemplate } = useCustomTemplates();
+
+  const builtIn: CredentialTemplate[] = [
     {
       id: 'escrow',
       title: 'Escrow',
@@ -104,5 +107,7 @@ export function useCredentialTemplates() {
     },
   ];
 
-  return { templates };
+  const templates: CredentialTemplate[] = [...builtIn, ...customTemplates];
+
+  return { templates, saveTemplate, deleteTemplate };
 }
