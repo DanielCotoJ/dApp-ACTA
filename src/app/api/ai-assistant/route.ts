@@ -52,7 +52,7 @@ Format your response as JSON:
             maxOutputTokens: 1024,
           },
         }),
-      },
+      }
     );
 
     if (!response.ok) {

@@ -65,7 +65,7 @@ export function useAIAssistant({ onNavigate, onClose }: UseAIAssistantProps) {
         handleSearch();
       }
     },
-    [handleSearch],
+    [handleSearch]
   );
 
   const handlePageClick = useCallback(
@@ -76,7 +76,7 @@ export function useAIAssistant({ onNavigate, onClose }: UseAIAssistantProps) {
       }
       onClose();
     },
-    [onNavigate, onClose],
+    [onNavigate, onClose]
   );
 
   return {

@@ -53,7 +53,7 @@ export default function DashboardLayoutClient({
     (path: string) => {
       router.push(path);
     },
-    [router],
+    [router]
   );
 
   return (
@@ -81,9 +81,7 @@ export default function DashboardLayoutClient({
         </div>
       </SidebarInset>
       <MobileBottomNav />
-      {aiOpen && (
-        <AIAssistant onNavigate={handleAiNavigate} onClose={() => setAiOpen(false)} />
-      )}
+      {aiOpen && <AIAssistant onNavigate={handleAiNavigate} onClose={() => setAiOpen(false)} />}
     </SidebarProvider>
   );
 }

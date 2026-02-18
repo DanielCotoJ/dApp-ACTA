@@ -12,7 +12,7 @@ interface AIAssistantProps {
 function renderMarkdown(
   text: string,
   onNavigate?: (path: string) => void,
-  onClose?: () => void,
+  onClose?: () => void
 ): React.ReactNode[] {
   const routePattern = /`(\/dashboard(?:\/[\w-]+)*)`/g;
   const boldPattern = /\*\*(.+?)\*\*/g;
@@ -20,7 +20,7 @@ function renderMarkdown(
 
   const combined = new RegExp(
     `(${routePattern.source})|(${boldPattern.source})|(${codePattern.source})`,
-    'g',
+    'g'
   );
 
   const result: React.ReactNode[] = [];
@@ -45,13 +45,13 @@ function renderMarkdown(
         >
           {path}
           <ArrowRight className="w-3 h-3" />
-        </button>,
+        </button>
       );
     } else if (match[3]) {
       result.push(
         <strong key={`bold-${match.index}`} className="font-semibold text-zinc-100">
           {match[4]}
-        </strong>,
+        </strong>
       );
     } else if (match[5]) {
       result.push(
@@ -60,7 +60,7 @@ function renderMarkdown(
           className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 text-xs font-mono"
         >
           {match[6]}
-        </code>,
+        </code>
       );
     }
 
@@ -105,10 +105,7 @@ export function AIAssistant({ onNavigate, onClose }: AIAssistantProps) {
             placeholder="Ask anything about ACTA..."
             className="flex-1 bg-transparent text-zinc-100 placeholder:text-zinc-500 focus:outline-none text-lg"
           />
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-zinc-800 rounded-md transition-colors"
-          >
+          <button onClick={onClose} className="p-1 hover:bg-zinc-800 rounded-md transition-colors">
             <X className="w-5 h-5 text-zinc-400" />
           </button>
         </div>
@@ -129,9 +126,7 @@ export function AIAssistant({ onNavigate, onClose }: AIAssistantProps) {
                 </div>
                 <div className="text-zinc-300 leading-relaxed text-sm space-y-2">
                   {response.split('\n').map((line, i) => (
-                    <p key={i}>
-                      {renderMarkdown(line, onNavigate, onClose)}
-                    </p>
+                    <p key={i}>{renderMarkdown(line, onNavigate, onClose)}</p>
                   ))}
                 </div>
               </div>
