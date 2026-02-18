@@ -149,10 +149,7 @@ export default function CustomTemplateBuilder({
         )}
 
         {fields.map((f, idx) => (
-          <div
-            key={idx}
-            className="rounded-xl border border-zinc-800 bg-zinc-950/30 p-4 space-y-3"
-          >
+          <div key={idx} className="rounded-xl border border-zinc-800 bg-zinc-950/30 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-zinc-400">Field {idx + 1}</span>
               <button
