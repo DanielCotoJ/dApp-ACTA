@@ -10,7 +10,7 @@ import CustomTemplateBuilder from './CustomTemplateBuilder';
 
 export default function IssueBuilder() {
   const { templates, saveTemplate, deleteTemplate } = useCredentialTemplates();
-  const { state, apiKey, setApiKey, selectTemplate, setFieldValue, buildPreview, issue } =
+  const { state, apiKey, setApiKey, selectTemplate, setFieldValue, setOwner, buildPreview, issue } =
     useIssueCredential();
 
   const [showBuilder, setShowBuilder] = useState(false);
@@ -48,6 +48,8 @@ export default function IssueBuilder() {
             template={state.template}
             values={state.values}
             vcId={state.vcId}
+            owner={state.owner}
+            onSetOwner={setOwner}
             issuing={state.issuing}
             preview={state.preview}
             error={state.error}

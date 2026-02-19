@@ -11,6 +11,8 @@ export default function DynamicIssueForm({
   template,
   values,
   vcId,
+  owner,
+  onSetOwner,
   issuing,
   preview,
   error,
@@ -23,6 +25,8 @@ export default function DynamicIssueForm({
   template: CredentialTemplate | null;
   values: Record<string, string>;
   vcId: string;
+  owner: string;
+  onSetOwner: (value: string) => void;
   issuing: boolean;
   preview: unknown | null;
   error: string | null;
@@ -130,6 +134,23 @@ export default function DynamicIssueForm({
           </div>
         ) : (
           <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">
+                Recipient wallet address (owner)
+              </label>
+              <input
+                type="text"
+                value={owner}
+                placeholder="G... (leave empty to issue to yourself)"
+                onChange={(e) => onSetOwner(e.target.value)}
+                className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 text-white placeholder:text-zinc-500 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+              />
+              <p className="mt-1 text-xs text-zinc-500">
+                Who receives this credential. Empty = your connected wallet. Enter another G...
+                address to send the credential to their vault.
+              </p>
+            </div>
+
             {template.fields
               .filter((f) => (f.key === 'expirationDate' ? hasExpiration : true))
               .map((f) => (
