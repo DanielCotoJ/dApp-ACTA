@@ -33,6 +33,7 @@ export function useIssueCredential() {
   const [state, setState] = useState<IssueState>({
     template: null,
     vcId: '',
+    owner: '',
     values: {},
     issuing: false,
     preview: null,
@@ -73,6 +74,10 @@ export function useIssueCredential() {
       values: { ...s.values, [key]: value },
       error: null,
     }));
+  }, []);
+
+  const setOwner = useCallback((owner: string) => {
+    setState((s) => ({ ...s, owner: owner.trim(), error: null }));
   }, []);
 
   const buildPreview = useCallback(() => {
@@ -157,30 +162,44 @@ export function useIssueCredential() {
       // ignore
     }
 
-    const ownerG = activeAddress;
-    const ownerDidLocal = `did:pkh:stellar:${network === 'mainnet' ? 'public' : 'testnet'}:${ownerG}`;
+    const recipientInput = state.owner.trim();
+    const ownerG = recipientInput || activeAddress;
+
+    if (recipientInput) {
+      if (!/^G[0-9A-Za-z]{55}$/.test(recipientInput)) {
+        const msg = 'Recipient (owner) must be a valid Stellar address (G..., 56 characters).';
+        setState((s) => ({ ...s, error: msg }));
+        throw new Error(msg);
+      }
+    }
 
     const vc = buildPreview() || {};
 
     setState((s) => ({ ...s, issuing: true, error: null }));
 
+    const issuingToSelf = ownerG === activeAddress;
+
     try {
-      // Ensure vault exists before issuing.
-      if (vaultExists === false) {
+      if (issuingToSelf) {
+        // Ensure vault exists before issuing to self.
+        if (vaultExists === false) {
+          try {
+            await createVault();
+          } catch {
+            // ignore (might have been created in another tab)
+          }
+        }
+
+        // Ensure issuer is authorized in their own vault when issuing to self.
         try {
-          await createVault();
+          const isAuth = await checkSelfAuthorized();
+          if (!isAuth) await authorizeSelf();
         } catch {
-          // ignore (might have been created in another tab)
+          // ignore
         }
       }
-
-      // Ensure issuer is authorized in their own vault.
-      try {
-        const isAuth = await checkSelfAuthorized();
-        if (!isAuth) await authorizeSelf();
-      } catch {
-        // ignore
-      }
+      // When issuing to another (ownerG !== activeAddress), no vault creation or self-auth;
+      // the recipient must have a vault; the contract auto-authorizes the issuer on first issuance.
 
       const ensuredVcId = state.vcId || generateVcId();
       if (!state.vcId) {
@@ -195,7 +214,8 @@ export function useIssueCredential() {
         path: '/config',
       });
 
-      // Prepare issuance.
+      // Prepare issuance: owner = recipient (ownerG), issuer = signer (activeAddress).
+      const issuerDidLocal = `did:pkh:stellar:${network === 'mainnet' ? 'public' : 'testnet'}:${activeAddress}`;
       const prep = await actaFetchJson<TxPrepareResp>({
         network,
         apiKey: trimmedApiKey,
@@ -204,9 +224,9 @@ export function useIssueCredential() {
           owner: ownerG,
           vcId: ensuredVcId,
           vcData: JSON.stringify(vc),
-          issuer: ownerG,
-          issuerDid: ownerDidLocal,
-          sourcePublicKey: ownerG,
+          issuer: activeAddress,
+          issuerDid: issuerDidLocal,
+          sourcePublicKey: activeAddress,
           contractId: cfg.actaContractId,
         },
       });
@@ -293,6 +313,7 @@ export function useIssueCredential() {
     apiKey,
     state.template,
     state.vcId,
+    state.owner,
     validateRequired,
     buildPreview,
     vaultExists,
@@ -309,6 +330,7 @@ export function useIssueCredential() {
     ownerDid,
     selectTemplate,
     setFieldValue,
+    setOwner,
     buildPreview,
     issue,
   };
