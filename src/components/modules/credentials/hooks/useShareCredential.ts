@@ -30,6 +30,12 @@ export function useShareCredential(credential: Credential | null) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (predicate.kind === 'none') {
+      setProof(null);
+    }
+  }, [predicate.kind]);
+
   const onSelectAll = () => {
     if (!credential) return;
     const next: Record<string, boolean> = {};
@@ -65,7 +71,12 @@ export function useShareCredential(credential: Credential | null) {
       try {
         const payload: Record<string, unknown> = { revealedFields };
         if (credential?.id) payload.vc_id = credential.id;
-        if (proof) {
+        if (
+          proof &&
+          proof.statement !== ('none' as ZkStatement) &&
+          typeof proof.proof === 'string' &&
+          proof.proof
+        ) {
           payload.statement = proof.statement as unknown;
           payload.publicSignals = proof.publicSignals as unknown;
           payload.proof = proof.proof as unknown;
@@ -128,7 +139,7 @@ export function useShareCredential(credential: Credential | null) {
     try {
       const kind = predicate.kind;
       if (kind === 'none') {
-        setProof({ statement: 'none', publicSignals: [], proof: null });
+        setProof(null);
       } else {
         if (!credential) {
           setProof({ statement: 'none', publicSignals: [], proof: null });
