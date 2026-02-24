@@ -4,8 +4,16 @@ import { CredentialVerifyCard } from './CredentialVerifyCard';
 import { useCredentialVerify } from '@/components/modules/credentials/hooks/useCredentialVerify';
 
 export function CredentialVerify({ vcId }: { vcId: string }) {
-  const { verify, revealed, zkValid, zkStatement, reverify, reverifyLoading, hasVerified, hasZkProofInShare } =
-    useCredentialVerify(vcId);
+  const {
+    verify,
+    revealed,
+    zkValid,
+    zkStatement,
+    reverify,
+    reverifyLoading,
+    hasVerified,
+    hasZkProofInShare,
+  } = useCredentialVerify(vcId);
 
   return (
     <div className="w-full flex flex-col items-center justify-center py-6 gap-6">

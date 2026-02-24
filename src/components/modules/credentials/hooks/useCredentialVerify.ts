@@ -89,7 +89,11 @@ export function useCredentialVerify(vcId: string) {
           };
           setRevealed(sp.revealedFields || null);
           const st = sp.statement;
-          const hasSt = typeof st === 'object' && st && 'kind' in st && (st as { kind?: string }).kind !== 'none';
+          const hasSt =
+            typeof st === 'object' &&
+            st &&
+            'kind' in st &&
+            (st as { kind?: string }).kind !== 'none';
           const hasProof = typeof sp.proof === 'string' && sp.proof.length > 0;
           const hasZk = hasSt && hasProof;
           setHasZkProofInShare(hasZk);
@@ -155,5 +159,14 @@ export function useCredentialVerify(vcId: string) {
     }
   };
 
-  return { verify, revealed, zkValid, zkStatement, reverify, reverifyLoading, hasVerified, hasZkProofInShare };
+  return {
+    verify,
+    revealed,
+    zkValid,
+    zkStatement,
+    reverify,
+    reverifyLoading,
+    hasVerified,
+    hasZkProofInShare,
+  };
 }
