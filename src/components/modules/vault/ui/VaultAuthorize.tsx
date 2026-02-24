@@ -13,7 +13,8 @@ export function VaultAuthorize() {
     setAddressInput,
     authorizeMe,
     authorizeWithInput,
-    loading,
+    loadingSelf,
+    loadingAddress,
     isSelfAuthorized,
   } = useVaultAuthorize();
 
@@ -49,13 +50,13 @@ export function VaultAuthorize() {
           </div>
           <Button
             onClick={onAuthorizeMe}
-            disabled={loading || isSelfAuthorized}
-            aria-busy={loading}
+            disabled={loadingSelf || loadingAddress || isSelfAuthorized}
+            aria-busy={loadingSelf}
             className="w-full rounded-md"
           >
-            {loading ? (
+            {loadingSelf ? (
               <>
-                <Loader2 className="h-4 w-4 text-[#edeed1] animate-spin" />
+                <Loader2 className="animate-spin" />
                 <span>Authorizing...</span>
               </>
             ) : isSelfAuthorized ? (
@@ -80,8 +81,19 @@ export function VaultAuthorize() {
               onChange={(e) => setAddressInput(e.target.value)}
               className="flex-1 min-w-0"
             />
-            <Button onClick={onAuthorizeAddress} disabled={loading} className="rounded-md">
-              {loading ? 'Authorizing...' : 'Authorize'}
+            <Button
+              onClick={onAuthorizeAddress}
+              disabled={loadingSelf || loadingAddress}
+              className="rounded-md"
+            >
+              {loadingAddress ? (
+                <>
+                  <Loader2 className="animate-spin" />
+                  <span>Authorizing...</span>
+                </>
+              ) : (
+                'Authorize'
+              )}
             </Button>
           </div>
         </Card>
