@@ -25,6 +25,7 @@ export function useCredentialVerify(vcId: string) {
   const [hasVerified, setHasVerified] = useState(false);
   const [reverifyLoading, setReverifyLoading] = useState(false);
   const [shareParam, setShareParam] = useState<unknown>(null);
+  const [hasZkProofInShare, setHasZkProofInShare] = useState(false);
   useEffect(() => {
     const read = async () => {
       if (typeof window === 'undefined') return;
@@ -88,7 +89,11 @@ export function useCredentialVerify(vcId: string) {
           };
           setRevealed(sp.revealedFields || null);
           const st = sp.statement;
-          if (st === 'none' || (typeof st === 'object' && st && 'kind' in st)) {
+          const hasSt = typeof st === 'object' && st && 'kind' in st && (st as { kind?: string }).kind !== 'none';
+          const hasProof = typeof sp.proof === 'string' && sp.proof.length > 0;
+          const hasZk = hasSt && hasProof;
+          setHasZkProofInShare(hasZk);
+          if (hasZk) {
             setZkStatement(st as ZkStatement);
           } else {
             setZkStatement(null);
@@ -150,5 +155,5 @@ export function useCredentialVerify(vcId: string) {
     }
   };
 
-  return { verify, revealed, zkValid, zkStatement, reverify, reverifyLoading, hasVerified };
+  return { verify, revealed, zkValid, zkStatement, reverify, reverifyLoading, hasVerified, hasZkProofInShare };
 }
