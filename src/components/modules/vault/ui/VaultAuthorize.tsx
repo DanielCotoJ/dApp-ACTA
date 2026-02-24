@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 export function VaultAuthorize() {
   const {
@@ -49,9 +50,19 @@ export function VaultAuthorize() {
           <Button
             onClick={onAuthorizeMe}
             disabled={loading || isSelfAuthorized}
+            aria-busy={loading}
             className="w-full rounded-md"
           >
-            {loading ? 'Authorizing...' : isSelfAuthorized ? 'Already authorized' : 'Authorize Me'}
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 text-[#edeed1] animate-spin" />
+                <span>Authorizing...</span>
+              </>
+            ) : isSelfAuthorized ? (
+              'Already authorized'
+            ) : (
+              'Authorize Me'
+            )}
           </Button>
         </Card>
 
