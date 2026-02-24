@@ -95,7 +95,7 @@ export function useCredentialVerify(vcId: string) {
             'kind' in st &&
             (st as { kind?: string }).kind !== 'none';
           const hasProof = typeof sp.proof === 'string' && sp.proof.length > 0;
-          const hasZk = hasSt && hasProof;
+          const hasZk = Boolean(hasSt && hasProof);
           setHasZkProofInShare(hasZk);
           if (hasZk) {
             setZkStatement(st as ZkStatement);
