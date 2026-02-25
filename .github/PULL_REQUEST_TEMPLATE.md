@@ -1,22 +1,39 @@
-## What does this PR do?
+# 🚀 ACTA Pull Request
 
-<!-- Short description of the changes -->
+Mark with an `x` all the checkboxes that apply (like `[x]`)
 
-## Type of change
+- [ ] Closes #
+- [ ] Added tests (if necessary)
+- [ ] Run tests
+- [ ] Run formatting
+- [ ] Evidence attached
+- [ ] Commented the code
 
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Documentation
-- [ ] Other (describe below)
+---
 
-## Checklist
+### 📌 Type of Change
 
-- [ ] Code follows project style (lint passes)
-- [ ] Changes have been tested locally
+- [ ] Documentation (updates to README, docs, or comments)
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] Enhancement (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to change)
 
-## Video evidence (before / after)
+---
 
-<!-- Add links or attach short videos showing the behavior before and after your changes -->
+## 📝 Changes description
 
-- **Before:**
-- **After:**
+---
+
+## 📸 Evidence (A Loom/Cap video is required as evidence, we WON'T merge if there's no proof)
+
+---
+
+## ⏰ Time spent breakdown
+
+---
+
+## 🌌 Comments
+
+---
+
+Thank you for contributing to ACTA! We hope you can continue contributing to this project.
