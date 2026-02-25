@@ -1,13 +1,7 @@
 import Link from 'next/link';
 import { AuroraBackground } from '@/components/ui/aurora-background';
 import { HoverBorderGradient } from '@/components/ui/hover-border-gradient';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function NotFound() {
   return (
