@@ -89,7 +89,6 @@ export default function VaultPage() {
     }
   };
 
-  // Evitar hydration mismatch: walletAddress puede ser null en servidor y tener valor en cliente (localStorage)
   if (!hasMounted) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -488,7 +487,6 @@ export default function VaultPage() {
                       );
                     })}
                 </div>
-
               </motion.div>
             </motion.div>
           </div>
@@ -531,9 +529,15 @@ export default function VaultPage() {
                   <pre className="text-xs text-zinc-200 bg-zinc-950/60 border border-zinc-800 rounded-lg p-4 overflow-auto [scrollbar-width:thin]">
                     {(() => {
                       const raw = (active.credential as unknown as { raw?: unknown }).raw;
-                      const vaultRecord = (active.credential as unknown as { vaultRecord?: unknown }).vaultRecord;
+                      const vaultRecord = (
+                        active.credential as unknown as { vaultRecord?: unknown }
+                      ).vaultRecord;
                       const payload = raw ?? vaultRecord ?? active.credential;
-                      try { return JSON.stringify(payload, null, 2); } catch { return String(payload); }
+                      try {
+                        return JSON.stringify(payload, null, 2);
+                      } catch {
+                        return String(payload);
+                      }
                     })()}
                   </pre>
                 </div>
