@@ -2,7 +2,7 @@
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy, Share2, Trash2, Eye } from 'lucide-react';
+import { Share2, Trash2, Eye } from 'lucide-react';
 import Image from 'next/image';
 import { BorderBeam } from '@/components/ui/border-beam';
 import type { CredentialCardProps } from '@/@types/credentials';
@@ -19,8 +19,8 @@ export function CredentialCard({
   onView,
 }: CredentialCardProps) {
   return (
-    <Card className="relative overflow-hidden bg-black border-[#edeed1]/40 min-h-[200px] w-full p-0">
-      <div className="relative flex flex-col pr-6 pl-6 pb-6 pt-2 text-white">
+    <Card className="relative overflow-hidden bg-zinc-900/80 border border-zinc-800/60 min-h-[260px] w-full p-0 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.3),0_4px_8px_rgba(0,0,0,0.25),0_8px_24px_rgba(0,0,0,0.2)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.35),0_8px_16px_rgba(0,0,0,0.3),0_16px_48px_rgba(0,0,0,0.25)] hover:-translate-y-0.5 transition-all duration-300 ease-out">
+      <div className="relative flex flex-col pr-6 pl-6 pb-8 pt-2 text-white h-full justify-between">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {(() => {
@@ -32,7 +32,7 @@ export function CredentialCard({
                   : '/acta.png';
               const translateClass = logoSrc === '/acta.png' ? '-translate-x-2' : '-translate-x-1';
               return (
-                <div className={'shrink-0 h-20'}>
+                <div className="shrink-0 h-20 [filter:drop-shadow(0_0_12px_rgba(237,238,209,0.30))]">
                   <Image
                     src={logoSrc}
                     alt="Logo"
@@ -66,21 +66,9 @@ export function CredentialCard({
 
         <div className="space-y-1 mb-1">
           <p className="text-xs text-slate-400 uppercase tracking-wider">Wallet Address</p>
-          <div className="flex items-start gap-2">
-            <p className="font-mono text-xs font-medium break-all flex-1 leading-relaxed">
-              {wallet}
-            </p>
-            {onCopy && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onCopy(wallet, 'Wallet')}
-                className="h-8 w-8 p-0 hover:bg-[#edeed1]/10 text-white shrink-0 border border-[#edeed1]/30 rounded-lg"
-              >
-                <Copy className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
+          <p className="font-mono text-xs font-medium break-all leading-relaxed">
+            {wallet}
+          </p>
         </div>
 
         <div className="flex items-end justify-between gap-3 mt-2">
