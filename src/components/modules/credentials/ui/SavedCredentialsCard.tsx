@@ -18,11 +18,9 @@ export function CredentialCard({
   category,
   wallet,
   url,
-  onCopy,
   onShare,
   status,
   onRevoke,
-  onView,
   layoutId,
   onClick,
 }: ExpandableCredentialCardProps) {
