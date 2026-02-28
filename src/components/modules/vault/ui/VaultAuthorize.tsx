@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 export function VaultAuthorize() {
   const {
@@ -12,7 +13,8 @@ export function VaultAuthorize() {
     setAddressInput,
     authorizeMe,
     authorizeWithInput,
-    loading,
+    loadingSelf,
+    loadingAddress,
     isSelfAuthorized,
   } = useVaultAuthorize();
 
@@ -48,10 +50,20 @@ export function VaultAuthorize() {
           </div>
           <Button
             onClick={onAuthorizeMe}
-            disabled={loading || isSelfAuthorized}
+            disabled={loadingSelf || loadingAddress || isSelfAuthorized}
+            aria-busy={loadingSelf}
             className="w-full rounded-md"
           >
-            {loading ? 'Authorizing...' : isSelfAuthorized ? 'Already authorized' : 'Authorize Me'}
+            {loadingSelf ? (
+              <>
+                <Loader2 className="animate-spin" />
+                <span>Authorizing...</span>
+              </>
+            ) : isSelfAuthorized ? (
+              'Already authorized'
+            ) : (
+              'Authorize Me'
+            )}
           </Button>
         </Card>
 
@@ -69,8 +81,19 @@ export function VaultAuthorize() {
               onChange={(e) => setAddressInput(e.target.value)}
               className="flex-1 min-w-0"
             />
-            <Button onClick={onAuthorizeAddress} disabled={loading} className="rounded-md">
-              {loading ? 'Authorizing...' : 'Authorize'}
+            <Button
+              onClick={onAuthorizeAddress}
+              disabled={loadingSelf || loadingAddress}
+              className="rounded-md"
+            >
+              {loadingAddress ? (
+                <>
+                  <Loader2 className="animate-spin" />
+                  <span>Authorizing...</span>
+                </>
+              ) : (
+                'Authorize'
+              )}
             </Button>
           </div>
         </Card>

@@ -3,13 +3,14 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/layouts/sidebar/Sidebar';
 import { HeaderHome } from '@/layouts/header/Header';
 import { SettingsOverlayHost } from '@/components/modules/settings/ui/SettingsOverlayHost';
-import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import TutorialModal from '@/components/modules/tutorial/ui/TutorialModal';
 import { useWalletContext } from '@/providers/wallet.provider';
 import { useNetwork } from '@/providers/network.provider';
 import MobileBottomNav from '@/components/ui/mobile-bottom-nav';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { AIAssistant } from '@/components/modules/ai-assistant/ui/AIAssistant';
 
 export default function DashboardLayoutClient({
   children,
@@ -17,9 +18,12 @@ export default function DashboardLayoutClient({
   useWalletContext();
   useNetwork();
   const pathname = usePathname();
+  const router = useRouter();
   const isMobile = useIsMobile();
   const [tutorialClosed, setTutorialClosed] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+
   useEffect(() => {
     try {
       const key = 'tutorial_shown_global';
@@ -27,6 +31,30 @@ export default function DashboardLayoutClient({
       setTimeout(() => setTutorialOpen(!seen), 0);
     } catch {}
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setAiOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setAiOpen(true);
+    window.addEventListener('open-ai-assistant', handler);
+    return () => window.removeEventListener('open-ai-assistant', handler);
+  }, []);
+
+  const handleAiNavigate = useCallback(
+    (path: string) => {
+      router.push(path);
+    },
+    [router]
+  );
 
   return (
     <SidebarProvider>
@@ -52,8 +80,8 @@ export default function DashboardLayoutClient({
           </div>
         </div>
       </SidebarInset>
-      {/* Bottom navigation for mobile */}
       <MobileBottomNav />
+      {aiOpen && <AIAssistant onNavigate={handleAiNavigate} onClose={() => setAiOpen(false)} />}
     </SidebarProvider>
   );
 }
