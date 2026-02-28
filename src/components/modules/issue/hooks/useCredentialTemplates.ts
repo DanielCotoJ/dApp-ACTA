@@ -7,6 +7,13 @@ export function useCredentialTemplates() {
 
   const builtIn: CredentialTemplate[] = [
     {
+      id: 'impacta-certificate',
+      title: 'Impacta Certificate',
+      description: 'Certificate template for BAF Impacta Bootcamp.',
+      vcType: 'ImpactaCertificateCredential',
+      fields: [{ key: 'holderName', label: 'Holder Name', type: 'text', required: true, placeholder: 'Full name' }],
+    },
+    {
       id: 'escrow',
       title: 'Escrow',
       description: 'Programmable escrow credential linked to Trustless Work.',

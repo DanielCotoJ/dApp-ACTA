@@ -86,7 +86,8 @@ export function useIssueCredential() {
 
     const nowIso = new Date().toISOString();
     const expiration = state.values['expirationDate'] || undefined;
-    const rawSubject = state.values['subject'] || '';
+    const hasSubjectField = tpl.fields.some((f) => f.key === 'subject');
+    const rawSubject = hasSubjectField ? state.values['subject'] || '' : state.owner.trim();
 
     const toSubjectDid = (input: string) => {
       if (!input) return '';
@@ -116,7 +117,7 @@ export function useIssueCredential() {
 
     setState((s) => ({ ...s, preview: vc }));
     return vc;
-  }, [state.template, state.values, ownerDid, network, state.vcId]);
+  }, [state.template, state.values, state.owner, ownerDid, network, state.vcId]);
 
   const validateRequired = useCallback(
     (fields: TemplateField[]) => {

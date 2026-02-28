@@ -43,6 +43,7 @@ export default function DynamicIssueForm({
   const [validatingKey, setValidatingKey] = useState(false);
   const [keyValidationError, setKeyValidationError] = useState<string | null>(null);
   const [keyValidated, setKeyValidated] = useState(false);
+  const supportsExpiration = !!template?.fields.some((f) => f.key === 'expirationDate');
 
   useEffect(() => {
     onBuildPreview();
@@ -70,8 +71,6 @@ export default function DynamicIssueForm({
       }
     }
   };
-
-  void template;
 
   return (
     <div className="space-y-4">
@@ -102,7 +101,7 @@ export default function DynamicIssueForm({
               />
             )}
           </div>
-          {template && (
+          {template && supportsExpiration && (
             <div className="mt-4 flex items-center gap-3">
               <input
                 id="hasExpiration"
