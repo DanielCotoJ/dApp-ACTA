@@ -83,52 +83,6 @@ export function useVault() {
     setConfig(null);
   }, [network]);
 
-  const checkVaultExists = useCallback(async (): Promise<boolean | null> => {
-    if (!walletAddress) return null;
-    if (!ownerDid) return null;
-
-    const cfg = await ensureConfig();
-
-    const server = new StellarSdk.rpc.Server(cfg.rpcUrl);
-    const sourceAccount = await server.getAccount(walletAddress);
-    const account = new StellarSdk.Account(walletAddress, sourceAccount.sequenceNumber());
-    const contract = new StellarSdk.Contract(cfg.actaContractId);
-
-    const tx = new StellarSdk.TransactionBuilder(account, {
-      fee: StellarSdk.BASE_FEE.toString(),
-      networkPassphrase: cfg.networkPassphrase,
-    })
-      .addOperation(
-        contract.call(
-          // Existence probe:
-          // - If vault is NOT initialized, this fails with ContractError::VaultNotInitialized (#8)
-          //   BEFORE requiring auth.
-          // - If vault exists, simulation has no signature so it fails with an auth error.
-          'set_vault_admin',
-          StellarSdk.Address.fromString(walletAddress).toScVal(),
-          StellarSdk.Address.fromString(walletAddress).toScVal()
-        )
-      )
-      .setTimeout(60)
-      .build();
-
-    const sim = (await server.simulateTransaction(tx)) as { error?: unknown };
-    const err = sim.error;
-    if (typeof err === 'string') {
-      // Vault NOT initialized
-      if (/Error\(Contract,\s*#8\)/.test(err) || /VaultNotInitialized/i.test(err)) return false;
-
-      // Any auth error indicates the vault exists but simulation lacks auth.
-      if (/Error\(Auth,/i.test(err) || /\bauth\b/i.test(err)) return true;
-
-      // Conservative fallback: unknown error => treat as not existing.
-      return false;
-    }
-
-    // If no error, the call would succeed => vault exists.
-    return true;
-  }, [walletAddress, ownerDid, ensureConfig]);
-
   const checkSelfAuthorized = useCallback(async (): Promise<boolean> => {
     if (!walletAddress) return false;
 
@@ -195,6 +149,41 @@ export function useVault() {
       setLoading(false);
     }
   }, [walletAddress, ownerDid, signTransaction, network, queryClient]);
+
+  const createSponsoredVault = useCallback(
+    async (params: { owner: string; didUri: string }) => {
+      if (!walletAddress) throw new Error('Connect your wallet first');
+      if (!signTransaction) throw new Error('Signer unavailable');
+
+      const owner = params.owner?.trim();
+      const didUri = params.didUri?.trim();
+
+      if (!owner) throw new Error('Owner address required');
+      if (!didUri) throw new Error('Owner DID required');
+
+      setLoading(true);
+      try {
+        const submit = await submitPreparedTx({
+          network,
+          preparePath: '/contracts/sponsored-vault/create',
+          prepareBody: {
+            sponsor: walletAddress,
+            owner,
+            didUri,
+            sourcePublicKey: walletAddress,
+          },
+          sign: signTransaction,
+        });
+
+        return { txId: submit.tx_id };
+      } catch (e: unknown) {
+        throw new Error(mapContractErrorToMessage(e));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [walletAddress, signTransaction, network]
+  );
 
   const authorizeSelf = useCallback(async () => {
     if (!walletAddress) throw new Error('Connect your wallet first');
@@ -330,16 +319,7 @@ export function useVault() {
     }
 
     try {
-      const exists = await checkVaultExists();
-      if (exists !== true) {
-        return {
-          vaultExists: exists,
-          vcIds: [],
-          vcs: [],
-          vcReadError: false,
-        };
-      }
-
+      // If the list-vc-ids call succeeds, the vault exists (even if it's empty).
       const idsResp = await actaFetchJson<{ result: string[] }>({
         network,
         path: '/contracts/vault/list-vc-ids',
@@ -373,20 +353,29 @@ export function useVault() {
       }
 
       return {
-        vaultExists: true,
+        vaultExists: true as const,
         vcIds: ids,
         vcs: items,
-        vcReadError: false,
+        vcReadError: false as const,
       };
-    } catch {
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (/VaultNotInitialized/i.test(msg) || /Error\(Contract,\s*#8\)/.test(msg)) {
+        return {
+          vaultExists: false as const,
+          vcIds: [] as string[],
+          vcs: [] as unknown[],
+          vcReadError: false as const,
+        };
+      }
       return {
-        vaultExists: null,
-        vcIds: [],
-        vcs: [],
-        vcReadError: true,
+        vaultExists: null as const,
+        vcIds: [] as string[],
+        vcs: [] as unknown[],
+        vcReadError: true as const,
       };
     }
-  }, [walletAddress, network, checkVaultExists]);
+  }, [walletAddress, network]);
 
   const dashboardQuery = useQuery<{
     vaultExists: boolean | null;
@@ -473,6 +462,7 @@ export function useVault() {
 
     // writes
     createVault,
+    createSponsoredVault,
     authorizeSelf,
     authorizeAddress,
     revokeAddress,

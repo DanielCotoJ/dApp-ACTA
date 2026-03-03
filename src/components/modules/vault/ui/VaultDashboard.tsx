@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Shield, Search, Key, Lock, X, Share2, Trash2, Eye } from 'lucide-react';
+import { Shield, Search, Key, Lock, X, Share2, Trash2, Eye, Loader2, Copy } from 'lucide-react';
 import { useVaultDashboard } from '@/components/modules/vault/hooks/useVaultDashboard';
 import { useVaultCards } from '@/components/modules/vault/hooks/useVaultCards';
 import ShareCredentialModal from '@/components/modules/credentials/ui/ShareCredentialModal';
@@ -16,6 +16,8 @@ import { useWalletContext } from '@/providers/wallet.provider';
 import { AnimatePresence, motion } from 'motion/react';
 import { useOutsideClick } from '@/hooks/use-outside-click';
 import Image from 'next/image';
+import { useNetwork } from '@/providers/network.provider';
+import { toast } from 'sonner';
 
 interface ActiveCredentialView {
   credential: Credential;
@@ -50,18 +52,59 @@ export default function VaultPage() {
   const [hasMounted, setHasMounted] = useState(false);
   const expandedRef = useRef<HTMLDivElement>(null);
   const motionId = useId();
+  const { network } = useNetwork();
+  const [sponsorOwnerAddress, setSponsorOwnerAddress] = useState('');
+  const [sponsorOwnerDid, setSponsorOwnerDid] = useState('');
+  const [sponsoring, setSponsoring] = useState(false);
 
   useEffect(() => {
     setHasMounted(true);
   }, []);
 
-  const { loading: creatingVault } = useVault();
+  const { loading: creatingVault, createSponsoredVault } = useVault();
   const showCreatingLoader = isCreating || creatingVault;
 
   const closeExpanded = useCallback(() => {
     setActive(null);
     setShowRawJson(false);
   }, []);
+
+  const handleSponsorOwnerChange = useCallback(
+    (value: string) => {
+      setSponsorOwnerAddress(value);
+      if (value) {
+        const networkId = network === 'mainnet' ? 'public' : 'testnet';
+        setSponsorOwnerDid(`did:pkh:stellar:${networkId}:${value}`);
+      } else {
+        setSponsorOwnerDid('');
+      }
+    },
+    [network]
+  );
+
+  const handleCreateSponsoredVault = useCallback(async () => {
+    if (!sponsorOwnerAddress || !sponsorOwnerDid) {
+      toast.error('Owner wallet and DID are required');
+      return;
+    }
+    setSponsoring(true);
+    try {
+      const { txId } = await createSponsoredVault({
+        owner: sponsorOwnerAddress,
+        didUri: sponsorOwnerDid,
+      });
+      toast.success('Sponsored vault created');
+      setSponsorOwnerAddress('');
+      setSponsorOwnerDid('');
+      // eslint-disable-next-line no-console
+      console.log('Sponsored vault tx', txId);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(msg);
+    } finally {
+      setSponsoring(false);
+    }
+  }, [createSponsoredVault, sponsorOwnerAddress, sponsorOwnerDid]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -305,6 +348,86 @@ export default function VaultPage() {
               ))}
             </div>
           )}
+        </div>
+
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 border-t border-white/10 mt-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-xl font-semibold text-white">Sponsored vault</h2>
+              <p className="text-sm text-white/50">
+                Create vaults on behalf of other wallets when you are a sponsor.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card className="p-6 bg-card border-border space-y-4">
+              <div>
+                <p className="text-sm font-medium text-white/80">Your wallet (sponsor)</p>
+                <p className="text-xs text-white/50 mb-2">
+                  This wallet will sign sponsored vault transactions.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 bg-black/40 rounded-lg p-4 border border-white/10">
+                <code className="text-white font-mono text-xs flex-1 break-all">
+                  {walletAddress}
+                </code>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 hover:bg-white/10"
+                  onClick={() => copyToClipboard(walletAddress, 'wallet')}
+                >
+                  <Copy className="h-4 w-4 text-white/60" />
+                </Button>
+              </div>
+            </Card>
+
+            <Card className="p-6 bg-card border-border space-y-4">
+              <div>
+                <p className="text-sm font-medium text-white/80">Vault owner</p>
+                <p className="text-xs text-white/50 mb-2">
+                  Enter the wallet address to create a vault for.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <p className="text-xs text-white/60">Owner wallet (G...)</p>
+                  <Input
+                    type="text"
+                    placeholder="G..."
+                    value={sponsorOwnerAddress}
+                    onChange={(e) => handleSponsorOwnerChange(e.target.value)}
+                    className="bg-black/40 border-white/10"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-white/60">Owner DID</p>
+                  <div className="flex items-center gap-3 bg-black/40 rounded-lg p-3 border border-white/10">
+                    <code className="text-white font-mono text-xs flex-1 break-all">
+                      {sponsorOwnerDid || 'will be derived from wallet'}
+                    </code>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                onClick={handleCreateSponsoredVault}
+                disabled={sponsoring || !sponsorOwnerAddress}
+                className="w-full h-10 bg-white hover:bg-white/90 text-black font-semibold rounded-xl disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+              >
+                {sponsoring ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating sponsored vault...
+                  </>
+                ) : (
+                  'Create sponsored vault'
+                )}
+              </Button>
+            </Card>
+          </div>
         </div>
       </div>
 
