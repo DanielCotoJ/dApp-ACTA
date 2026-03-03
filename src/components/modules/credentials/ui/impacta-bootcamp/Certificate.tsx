@@ -234,7 +234,7 @@ export default function Certificate(props: CertificateProps) {
         </div>
 
         {details.length > 0 && (
-          <div className="w-full lg:w-[420px] shrink-0 flex flex-col gap-4">
+          <div className="w-full lg:w-[480px] shrink-0 flex flex-col gap-4">
             <div className="rounded-xl bg-black/80 border border-white/15 px-5 py-4 sm:px-6 sm:py-5 text-white">
               <div className="text-[11px] sm:text-xs tracking-[0.18em] text-white/50 uppercase mb-3">
                 Credential Details
@@ -258,7 +258,9 @@ export default function Certificate(props: CertificateProps) {
               <a
                 href={
                   shareUrl
-                    ? `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent('Mi certificado Impacta Bootcamp')}`
+                    ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                        `Mi certificado Impacta Bootcamp\n\n${shareUrl}\n\nEmitido por @ActaXyz \nGracias a @TheBAFNetwork @TrustlessWork @StellarOrg por el apoyo`,
+                      )}`
                     : '#'
                 }
                 target="_blank"

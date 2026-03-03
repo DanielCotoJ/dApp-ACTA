@@ -125,12 +125,34 @@ export function useShareCredential(credential: Credential | null) {
           payload.proof = proof.proof as unknown;
           if (typeof proof.ok === 'boolean') payload.ok = proof.ok as unknown;
         }
+
         const json = JSON.stringify(payload);
+
+        // Prefer short share keys via /api/share so links stay compact (e.g. for X).
+        try {
+          const resp = await fetch('/api/share', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: json,
+          });
+          if (resp.ok) {
+            const data = (await resp.json()) as { id?: string } | null;
+            const id = data && typeof data.id === 'string' ? data.id : null;
+            if (id) {
+              setShareParam(encodeURIComponent(id));
+              return;
+            }
+          }
+        } catch {
+          // fall through to inline encoding if share API is unavailable
+        }
+
+        // Fallback: inline, URL-safe base64 payload.
         const bytes = new TextEncoder().encode(json);
         let binary = '';
         for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-        const encoded = encodeURIComponent(btoa(binary));
-        setShareParam(encoded);
+        const b64 = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+        setShareParam(encodeURIComponent(b64));
       } catch {
         setShareParam('');
       }
