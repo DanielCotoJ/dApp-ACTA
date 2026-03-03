@@ -86,7 +86,8 @@ export function useIssueCredential() {
 
     const nowIso = new Date().toISOString();
     const expiration = state.values['expirationDate'] || undefined;
-    const rawSubject = state.values['subject'] || '';
+    const hasSubjectField = tpl.fields.some((f) => f.key === 'subject');
+    const rawSubject = hasSubjectField ? state.values['subject'] || '' : state.owner.trim();
 
     const toSubjectDid = (input: string) => {
       if (!input) return '';
@@ -104,7 +105,7 @@ export function useIssueCredential() {
       credentialSubject[k] = v;
     }
 
-    const vc = {
+    const vc: Record<string, unknown> = {
       id: state.vcId,
       '@context': ['https://www.w3.org/2018/credentials/v1'],
       type: ['VerifiableCredential', tpl.vcType],
@@ -113,10 +114,13 @@ export function useIssueCredential() {
       expirationDate: expiration,
       credentialSubject,
     };
+    if (tpl.id === 'impacta-certificate') {
+      vc.issuerName = 'BAF';
+    }
 
     setState((s) => ({ ...s, preview: vc }));
     return vc;
-  }, [state.template, state.values, ownerDid, network, state.vcId]);
+  }, [state.template, state.values, state.owner, ownerDid, network, state.vcId]);
 
   const validateRequired = useCallback(
     (fields: TemplateField[]) => {
