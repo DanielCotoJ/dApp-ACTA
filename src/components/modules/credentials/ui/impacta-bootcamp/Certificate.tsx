@@ -256,7 +256,11 @@ export default function Certificate(props: CertificateProps) {
 
             <div className="flex gap-2">
               <a
-                href={shareUrl ? `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent('Mi certificado Impacta Bootcamp')}` : '#'}
+                href={
+                  shareUrl
+                    ? `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent('Mi certificado Impacta Bootcamp')}`
+                    : '#'
+                }
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 text-white text-sm font-medium transition-colors"
@@ -265,7 +269,11 @@ export default function Certificate(props: CertificateProps) {
                 <span>Share X</span>
               </a>
               <a
-                href={shareUrl ? `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}` : '#'}
+                href={
+                  shareUrl
+                    ? `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`
+                    : '#'
+                }
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 text-white text-sm font-medium transition-colors"
