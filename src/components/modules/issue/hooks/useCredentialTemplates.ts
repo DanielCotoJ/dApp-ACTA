@@ -11,7 +11,15 @@ export function useCredentialTemplates() {
       title: 'Impacta Certificate',
       description: 'Certificate template for BAF Impacta Bootcamp.',
       vcType: 'ImpactaCertificateCredential',
-      fields: [{ key: 'holderName', label: 'Holder Name', type: 'text', required: true, placeholder: 'Full name' }],
+      fields: [
+        {
+          key: 'holderName',
+          label: 'Holder Name',
+          type: 'text',
+          required: true,
+          placeholder: 'Full name',
+        },
+      ],
     },
     {
       id: 'escrow',

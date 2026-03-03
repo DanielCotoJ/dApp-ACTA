@@ -105,7 +105,7 @@ export function useIssueCredential() {
       credentialSubject[k] = v;
     }
 
-    const vc = {
+    const vc: Record<string, unknown> = {
       id: state.vcId,
       '@context': ['https://www.w3.org/2018/credentials/v1'],
       type: ['VerifiableCredential', tpl.vcType],
@@ -114,6 +114,9 @@ export function useIssueCredential() {
       expirationDate: expiration,
       credentialSubject,
     };
+    if (tpl.id === 'impacta-certificate') {
+      vc.issuerName = 'BAF';
+    }
 
     setState((s) => ({ ...s, preview: vc }));
     return vc;

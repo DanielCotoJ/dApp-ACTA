@@ -11,6 +11,8 @@ export type Credential = {
   id: string;
   title: string;
   issuer: string;
+  issuerName?: string;
+  issuerDid?: string;
   subject: string;
   type: string;
   issuedAt: string;
@@ -26,6 +28,7 @@ export type Credential = {
    * Raw vault record returned by the API (`/contracts/vault/get-vc` + status merge).
    */
   vaultRecord?: unknown;
+  [key: string]: unknown;
 };
 
 export type CredentialVerifyProps = {

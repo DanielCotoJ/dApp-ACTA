@@ -18,8 +18,9 @@ function adaptVcToCredential(vc: unknown): Credential {
   const p = (parsed ?? {}) as Record<string, unknown>;
   const cs = (p.credentialSubject ?? {}) as Record<string, unknown>;
   const title = (p.title as string) || (p.name as string) || (cs.name as string) || 'Credential';
-  const issuer =
-    (obj.issuer_did as string) || (p.issuer as string) || (p.issuerName as string) || '-';
+  const issuerName = (p.issuerName as string) || undefined;
+  const issuerDid = (obj.issuer_did as string) || (p.issuer as string) || undefined;
+  const issuer = issuerName || issuerDid || '-';
   const subject = (p.subject as string) || (p.subjectDID as string) || (cs.id as string) || '-';
   const rawType = (p.type as unknown) ?? (p.credentialType as unknown) ?? 'VC';
   let type: string;
@@ -48,7 +49,7 @@ function adaptVcToCredential(vc: unknown): Credential {
   const status: 'valid' | 'expired' | 'revoked' =
     statusNorm === 'revoked' ? 'revoked' : statusNorm === 'expired' ? 'expired' : 'valid';
 
-  return {
+  const base: Credential = {
     id: String(obj.id ?? 'unknown'),
     title: String(title),
     issuer: String(issuer),
@@ -58,9 +59,35 @@ function adaptVcToCredential(vc: unknown): Credential {
     expirationDate: expirationDate ? String(expirationDate) : null,
     status,
     birthDate: birthDate ? String(birthDate) : undefined,
+    issuerName,
+    issuerDid,
     raw: parsed,
     vaultRecord: obj,
   };
+
+  const reserved = new Set([
+    'id',
+    'title',
+    'issuer',
+    'issuerName',
+    'issuerDid',
+    'subject',
+    'type',
+    'issuedAt',
+    'expirationDate',
+    'status',
+    'birthDate',
+    'raw',
+    'vaultRecord',
+  ]);
+  const dynamicSubjectFields: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(cs)) {
+    if (key === 'id' || reserved.has(key)) continue;
+    if (value == null) continue;
+    dynamicSubjectFields[key] = value;
+  }
+
+  return { ...base, ...dynamicSubjectFields };
 }
 
 export function useCredentialsList() {

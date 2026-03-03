@@ -4,17 +4,46 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Credential, ZkStatement } from '@/@types/credentials';
 
 export function useShareCredential(credential: Credential | null) {
-  const fields = useMemo(
-    () => [
+  const fields = useMemo(() => {
+    const isPresent = (value: unknown) =>
+      value !== undefined && value !== null && String(value) !== '';
+    const toLabel = (key: string) =>
+      key
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/_/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/^\w/, (m) => m.toUpperCase());
+    const c = (credential ?? {}) as Record<string, unknown>;
+    const base = [
+      { key: 'issuerName', label: 'Issuer Name' },
+      { key: 'issuerDid', label: 'Issuer DID' },
       { key: 'issuer', label: 'Issuer' },
       { key: 'subject', label: 'Holder DID' },
       { key: 'type', label: 'Credential Type' },
       { key: 'issuedAt', label: 'Issued At' },
       { key: 'expirationDate', label: 'Expiration Date' },
       { key: 'status', label: 'Status' },
-    ],
-    []
-  );
+    ];
+    const reserved = new Set([
+      'id',
+      'title',
+      'raw',
+      'vaultRecord',
+      'birthDate',
+      ...base.map((f) => f.key),
+    ]);
+    const next: Array<{ key: string; label: string }> = [];
+    for (const field of base) {
+      if (isPresent(c[field.key])) next.push(field);
+    }
+    for (const [key, value] of Object.entries(c)) {
+      if (reserved.has(key)) continue;
+      if (!isPresent(value)) continue;
+      next.push({ key, label: toLabel(key) });
+    }
+    return next;
+  }, [credential]);
 
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [copied, setCopied] = useState(false);
