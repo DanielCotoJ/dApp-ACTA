@@ -125,18 +125,6 @@ export function useShareCredential(credential: Credential | null) {
           payload.proof = proof.proof as unknown;
           if (typeof proof.ok === 'boolean') payload.ok = proof.ok as unknown;
         }
-        const resp = await fetch('/api/share', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        if (resp.ok) {
-          const j = (await resp.json()) as { id?: string };
-          if (j?.id) {
-            setShareParam(encodeURIComponent(j.id));
-            return;
-          }
-        }
         const json = JSON.stringify(payload);
         const bytes = new TextEncoder().encode(json);
         let binary = '';
