@@ -15,6 +15,20 @@ export function useShareCredential(credential: Credential | null) {
         .trim()
         .replace(/^\w/, (m) => m.toUpperCase());
     const c = (credential ?? {}) as Record<string, unknown>;
+
+    const isImpacta =
+      typeof c.type === 'string' && c.type.includes('ImpactaCertificateCredential');
+
+    if (isImpacta) {
+      const next: Array<{ key: string; label: string }> = [];
+      if (isPresent(c.issuer)) next.push({ key: 'issuer', label: 'Issuer' });
+      if (isPresent(c.subject)) next.push({ key: 'subject', label: 'Holder DID' });
+      if (isPresent(c.type)) next.push({ key: 'type', label: 'Credential Type' });
+      if (isPresent(c.issuedAt)) next.push({ key: 'issuedAt', label: 'Issued At' });
+      if (isPresent(c.status)) next.push({ key: 'status', label: 'Status' });
+      if (isPresent(c.holderName)) next.push({ key: 'holderName', label: 'Holder Name' });
+      return next;
+    }
     const base = [
       { key: 'issuerDid', label: 'Issuer DID' },
       { key: 'issuer', label: 'Issuer' },
@@ -100,6 +114,7 @@ export function useShareCredential(credential: Credential | null) {
       try {
         const payload: Record<string, unknown> = { revealedFields };
         if (credential?.id) payload.vc_id = credential.id;
+        if (credential?.type) payload.type = credential.type;
         if (
           proof &&
           proof.statement !== ('none' as ZkStatement) &&

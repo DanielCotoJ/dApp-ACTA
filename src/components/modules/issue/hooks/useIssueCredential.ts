@@ -116,6 +116,7 @@ export function useIssueCredential() {
     };
     if (tpl.id === 'impacta-certificate') {
       vc.issuerName = 'BAF';
+      vc.title = 'Impacta Bootcamp Certificate';
     }
 
     setState((s) => ({ ...s, preview: vc }));
