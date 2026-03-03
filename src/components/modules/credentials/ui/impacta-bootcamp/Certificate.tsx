@@ -1,27 +1,17 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
+import { forwardRef, useRef, useSyncExternalStore, useCallback, useState } from 'react';
 import Image from 'next/image';
-import { Twitter, Linkedin } from 'lucide-react';
+import { Twitter, Linkedin, Download } from 'lucide-react';
+import type {
+  ImpactaCertificateProps as CertificateProps,
+  ImpactaCertificateCanvasProps as CertificateCanvasProps,
+} from '@/@types/impacta-certificate';
 
-type CertificateProps = {
-  holderName?: string;
-  year?: string | number;
-  issuer?: string;
-  subjectDid?: string;
-  credentialType?: string;
-  issuedAt?: string;
-  status?: string;
-};
-
-type CertificateCanvasProps = {
-  holderName?: string;
-  year?: string | number;
-};
-
-export function CertificateCanvas({ holderName, year = 2026 }: CertificateCanvasProps) {
-  return (
-    <div className="w-full max-w-[1200px]">
+export const CertificateCanvas = forwardRef<HTMLDivElement, CertificateCanvasProps>(
+  function CertificateCanvas({ holderName, year = 2026 }, ref) {
+    return (
+      <div ref={ref} className="relative w-full max-w-[1200px]">
       <div className="relative w-full aspect-[1.414/1] bg-[#0000FF] overflow-hidden">
         {/* Decorative thin white border line (partial frame) */}
         <svg
@@ -59,6 +49,7 @@ export function CertificateCanvas({ holderName, year = 2026 }: CertificateCanvas
             width={99}
             height={45}
             className="w-full h-auto"
+            unoptimized
           />
         </div>
 
@@ -70,6 +61,7 @@ export function CertificateCanvas({ holderName, year = 2026 }: CertificateCanvas
             width={244}
             height={30}
             className="w-full h-auto"
+            unoptimized
           />
         </div>
 
@@ -81,6 +73,7 @@ export function CertificateCanvas({ holderName, year = 2026 }: CertificateCanvas
             width={70}
             height={120}
             className="w-full h-auto"
+            unoptimized
           />
         </div>
 
@@ -92,6 +85,7 @@ export function CertificateCanvas({ holderName, year = 2026 }: CertificateCanvas
             width={232}
             height={76}
             className="w-full h-auto"
+            unoptimized
           />
         </div>
 
@@ -103,6 +97,7 @@ export function CertificateCanvas({ holderName, year = 2026 }: CertificateCanvas
             width={505}
             height={610}
             className="w-full h-auto"
+            unoptimized
           />
         </div>
 
@@ -157,6 +152,7 @@ export function CertificateCanvas({ holderName, year = 2026 }: CertificateCanvas
             width={54}
             height={53}
             className="w-full h-auto"
+            unoptimized
           />
         </div>
 
@@ -169,6 +165,7 @@ export function CertificateCanvas({ holderName, year = 2026 }: CertificateCanvas
               width={218}
               height={38}
               className="w-[15vw] h-auto"
+              unoptimized
             />
           </div>
         </div>
@@ -198,15 +195,88 @@ export function CertificateCanvas({ holderName, year = 2026 }: CertificateCanvas
       `}</style>
     </div>
   );
-}
+  },
+);
 
 export default function Certificate(props: CertificateProps) {
   const { issuedAt, year, issuer, subjectDid, credentialType, status } = props;
+  const certRef = useRef<HTMLDivElement>(null);
   const shareUrl = useSyncExternalStore(
     () => () => {},
     () => (typeof window !== 'undefined' ? window.location.href : ''),
     () => ''
   );
+
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownloadImage = useCallback(async () => {
+    const el = certRef.current;
+    if (!el || typeof window === 'undefined') return;
+    setDownloadError(null);
+    setDownloading(true);
+    let qr: HTMLImageElement | null = null;
+    try {
+      const targetUrl = shareUrl || window.location.href;
+
+      if (targetUrl) {
+        qr = document.createElement('img');
+        qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
+          targetUrl,
+        )}`;
+        qr.alt = 'Credential QR';
+        qr.style.position = 'absolute';
+        qr.style.top = '24px';
+        qr.style.right = '24px';
+        qr.style.width = '96px';
+        qr.style.height = '96px';
+        qr.style.backgroundColor = '#ffffff';
+        qr.style.padding = '6px';
+        qr.style.borderRadius = '8px';
+        qr.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.25)';
+        qr.style.zIndex = '40';
+        el.appendChild(qr);
+      }
+
+      // Wait for images inside the certificate to be loaded
+      const imgs = el.querySelectorAll('img');
+      await Promise.all(
+        Array.from(imgs).map(
+          (img) =>
+            new Promise<void>((resolve) => {
+              if (img.complete) resolve();
+              else {
+                img.onload = () => resolve();
+                img.onerror = () => resolve();
+                setTimeout(resolve, 3000);
+              }
+            }),
+        ),
+      );
+
+      const htmlToImage = await import('html-to-image');
+      const dataUrl = await htmlToImage.toPng(el, {
+        cacheBust: true,
+        pixelRatio: 2,
+        quality: 1,
+        backgroundColor: '#0000FF',
+      });
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = 'impacta-bootcamp-certificate.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Download failed';
+      setDownloadError(message);
+    } finally {
+      if (qr && qr.parentNode === el) {
+        el.removeChild(qr);
+      }
+      setDownloading(false);
+    }
+  }, [shareUrl]);
 
   const derivedYear =
     typeof year !== 'undefined'
@@ -229,63 +299,82 @@ export default function Certificate(props: CertificateProps) {
         {/* Certificado a la izquierda */}
         <div className="w-full max-w-[900px] lg:max-w-[900px] shrink-0">
           <div className="scale-[0.8] sm:scale-[0.75] origin-top-left w-full">
-            <CertificateCanvas holderName={props.holderName} year={derivedYear} />
+            <CertificateCanvas
+              ref={certRef}
+              holderName={props.holderName}
+              year={derivedYear}
+            />
           </div>
         </div>
 
-        {details.length > 0 && (
-          <div className="w-full lg:w-[480px] shrink-0 flex flex-col gap-4">
-            <div className="rounded-xl bg-black/80 border border-white/15 px-5 py-4 sm:px-6 sm:py-5 text-white">
-              <div className="text-[11px] sm:text-xs tracking-[0.18em] text-white/50 uppercase mb-3">
-                Credential Details
-              </div>
-              <div className="space-y-2 sm:space-y-2.5 text-xs sm:text-sm">
-                {details.map((item) => (
-                  <div
-                    key={item.label}
-                    className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-1 sm:gap-3 border-t border-white/8 first:border-t-0 pt-2 first:pt-0"
-                  >
-                    <div className="font-semibold text-white/70 uppercase text-[11px] sm:text-[11px]">
-                      {item.label}
+          {details.length > 0 && (
+            <div className="w-full lg:w-[480px] shrink-0 flex flex-col gap-4">
+              <div className="rounded-xl bg-black/80 border border-white/15 px-5 py-4 sm:px-6 sm:py-5 text-white">
+                <div className="text-[11px] sm:text-xs tracking-[0.18em] text-white/50 uppercase mb-3">
+                  Credential Details
+                </div>
+                <div className="space-y-2 sm:space-y-2.5 text-xs sm:text-sm">
+                  {details.map((item) => (
+                    <div
+                      key={item.label}
+                      className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-1 sm:gap-3 border-t border-white/8 first:border-t-0 pt-2 first:pt-0"
+                    >
+                      <div className="font-semibold text-white/70 uppercase text-[11px] sm:text-[11px]">
+                        {item.label}
+                      </div>
+                      <div className="font-mono text-white/90 break-all">{item.value}</div>
                     </div>
-                    <div className="font-mono text-white/90 break-all">{item.value}</div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div className="flex gap-2">
-              <a
-                href={
-                  shareUrl
-                    ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                        `Mi certificado Impacta Bootcamp\n\n${shareUrl}\n\nEmitido por @ActaXyz \nGracias a @TheBAFNetwork @TrustlessWork @StellarOrg por el apoyo`
-                      )}`
-                    : '#'
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 text-white text-sm font-medium transition-colors"
+              <div className="flex gap-2">
+                <a
+                  href={
+                    shareUrl
+                      ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                          `My Impacta Bootcamp certificate\n\n${shareUrl}\n\n@TheBAFNetwork @ActaXyz @TrustlessWork @StellarOrg`,
+                        )}`
+                      : '#'
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 text-white text-sm font-medium transition-colors"
+                >
+                  <Twitter className="w-4 h-4 shrink-0" />
+                  <span>Share X</span>
+                </a>
+                <a
+                  href={
+                    shareUrl
+                      ? `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+                          shareUrl,
+                        )}`
+                      : '#'
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 text-white text-sm font-medium transition-colors"
+                >
+                  <Linkedin className="w-4 h-4 shrink-0" />
+                  <span>Share LinkedIn</span>
+                </a>
+              </div>
+
+              {downloadError && (
+                <p className="mt-2 text-xs text-red-400">{downloadError}</p>
+              )}
+              <button
+                type="button"
+                onClick={handleDownloadImage}
+                disabled={downloading}
+                className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-white text-black hover:bg-zinc-200 border border-white/20 text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <Twitter className="w-4 h-4 shrink-0" />
-                <span>Share X</span>
-              </a>
-              <a
-                href={
-                  shareUrl
-                    ? `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`
-                    : '#'
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 text-white text-sm font-medium transition-colors"
-              >
-                <Linkedin className="w-4 h-4 shrink-0" />
-                <span>Share LinkedIn</span>
-              </a>
+                <Download className="w-4 h-4 shrink-0" />
+                <span>{downloading ? 'Downloading…' : 'Download image'}</span>
+              </button>
             </div>
-          </div>
-        )}
+          )}
       </div>
     </main>
   );
