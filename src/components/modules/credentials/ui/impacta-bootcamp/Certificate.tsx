@@ -202,9 +202,7 @@ export function CertificateCanvas({ holderName, year = 2026 }: CertificateCanvas
 
 export default function Certificate(props: CertificateProps) {
   const { issuedAt, year, issuer, subjectDid, credentialType, status } = props;
-  const [shareUrl] = useState(() =>
-    typeof window !== 'undefined' ? window.location.href : ''
-  );
+  const [shareUrl] = useState(() => (typeof window !== 'undefined' ? window.location.href : ''));
 
   const derivedYear =
     typeof year !== 'undefined'
