@@ -16,7 +16,6 @@ export function useShareCredential(credential: Credential | null) {
         .replace(/^\w/, (m) => m.toUpperCase());
     const c = (credential ?? {}) as Record<string, unknown>;
     const base = [
-      { key: 'issuerName', label: 'Issuer Name' },
       { key: 'issuerDid', label: 'Issuer DID' },
       { key: 'issuer', label: 'Issuer' },
       { key: 'subject', label: 'Holder DID' },
@@ -31,6 +30,7 @@ export function useShareCredential(credential: Credential | null) {
       'raw',
       'vaultRecord',
       'birthDate',
+      'issuerName',
       ...base.map((f) => f.key),
     ]);
     const next: Array<{ key: string; label: string }> = [];
