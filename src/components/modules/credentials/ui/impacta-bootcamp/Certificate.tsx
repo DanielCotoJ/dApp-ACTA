@@ -259,7 +259,7 @@ export default function Certificate(props: CertificateProps) {
                 href={
                   shareUrl
                     ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                        `Mi certificado Impacta Bootcamp\n\n${shareUrl}\n\nEmitido por @ActaXyz \nGracias a @TheBAFNetwork @TrustlessWork @StellarOrg por el apoyo`,
+                        `Mi certificado Impacta Bootcamp\n\n${shareUrl}\n\nEmitido por @ActaXyz \nGracias a @TheBAFNetwork @TrustlessWork @StellarOrg por el apoyo`
                       )}`
                     : '#'
                 }
