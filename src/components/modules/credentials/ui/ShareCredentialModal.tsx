@@ -40,9 +40,9 @@ export default function ShareCredentialModal({
 
   const impactaHolderName =
     (credential as unknown as { holderName?: string | null })?.holderName ??
-    ((credential?.raw as unknown as { credentialSubject?: { holderName?: string } } | null)
+    (credential?.raw as unknown as { credentialSubject?: { holderName?: string } } | null)
       ?.credentialSubject?.holderName ??
-      undefined);
+    undefined;
 
   const impactaYear =
     credential?.issuedAt && !Number.isNaN(Date.parse(credential.issuedAt))

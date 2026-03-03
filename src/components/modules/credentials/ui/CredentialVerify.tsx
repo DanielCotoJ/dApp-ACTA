@@ -40,9 +40,7 @@ export function CredentialVerify({ vcId }: { vcId: string }) {
             : undefined
         }
         credentialType={
-          typeof impactaRevealed.type === 'string'
-            ? (impactaRevealed.type as string)
-            : undefined
+          typeof impactaRevealed.type === 'string' ? (impactaRevealed.type as string) : undefined
         }
         issuedAt={
           typeof impactaRevealed.issuedAt === 'string'

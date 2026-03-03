@@ -30,15 +30,7 @@ export function CertificateCanvas({ holderName, year = 2026 }: CertificateCanvas
           preserveAspectRatio="none"
         >
           {/* Top line from logo area to right edge */}
-          <line
-            x1="110"
-            y1="100"
-            x2="1360"
-            y2="100"
-            stroke="white"
-            strokeWidth="1"
-            opacity="0.5"
-          />
+          <line x1="110" y1="100" x2="1360" y2="100" stroke="white" strokeWidth="1" opacity="0.5" />
           {/* Right vertical line going down */}
           <line
             x1="1360"
@@ -54,15 +46,7 @@ export function CertificateCanvas({ holderName, year = 2026 }: CertificateCanvas
           {/* Top horizontal short line at very top */}
           <line x1="110" y1="20" x2="1280" y2="20" stroke="white" strokeWidth="1" opacity="0.5" />
           {/* Right short line at top to connect to seal */}
-          <line
-            x1="1280"
-            y1="20"
-            x2="1280"
-            y2="100"
-            stroke="white"
-            strokeWidth="1"
-            opacity="0.5"
-          />
+          <line x1="1280" y1="20" x2="1280" y2="100" stroke="white" strokeWidth="1" opacity="0.5" />
         </svg>
 
         {/* Top-left: Impacta Logo */}
@@ -240,4 +224,3 @@ export default function Certificate(props: CertificateProps) {
     </main>
   );
 }
-

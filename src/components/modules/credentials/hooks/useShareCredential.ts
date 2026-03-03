@@ -16,8 +16,7 @@ export function useShareCredential(credential: Credential | null) {
         .replace(/^\w/, (m) => m.toUpperCase());
     const c = (credential ?? {}) as Record<string, unknown>;
 
-    const isImpacta =
-      typeof c.type === 'string' && c.type.includes('ImpactaCertificateCredential');
+    const isImpacta = typeof c.type === 'string' && c.type.includes('ImpactaCertificateCredential');
 
     if (isImpacta) {
       const next: Array<{ key: string; label: string }> = [];
