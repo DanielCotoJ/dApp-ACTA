@@ -353,26 +353,26 @@ export function useVault() {
       }
 
       return {
-        vaultExists: true as const,
+        vaultExists: true,
         vcIds: ids,
         vcs: items,
-        vcReadError: false as const,
+        vcReadError: false,
       };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (/VaultNotInitialized/i.test(msg) || /Error\(Contract,\s*#8\)/.test(msg)) {
         return {
-          vaultExists: false as const,
+          vaultExists: false,
           vcIds: [] as string[],
           vcs: [] as unknown[],
-          vcReadError: false as const,
+          vcReadError: false,
         };
       }
       return {
-        vaultExists: null as const,
+        vaultExists: null,
         vcIds: [] as string[],
         vcs: [] as unknown[],
-        vcReadError: true as const,
+        vcReadError: true,
       };
     }
   }, [walletAddress, network]);

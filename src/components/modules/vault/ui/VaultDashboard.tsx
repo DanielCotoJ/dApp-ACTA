@@ -96,8 +96,9 @@ export default function VaultPage() {
       toast.success('Sponsored vault created');
       setSponsorOwnerAddress('');
       setSponsorOwnerDid('');
-      // eslint-disable-next-line no-console
-      console.log('Sponsored vault tx', txId);
+      toast.message('Sponsored vault tx', {
+        description: txId,
+      });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       toast.error(msg);
