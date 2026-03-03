@@ -12,4 +12,3 @@ export type ImpactaCertificateCanvasProps = {
   holderName?: string;
   year?: string | number;
 };
-
