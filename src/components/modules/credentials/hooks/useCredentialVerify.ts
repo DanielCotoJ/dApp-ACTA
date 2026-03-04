@@ -27,9 +27,13 @@ export function useCredentialVerify(vcId: string) {
   const [shareParam, setShareParam] = useState<unknown>(null);
   const [hasZkProofInShare, setHasZkProofInShare] = useState(false);
   const [shareType, setShareType] = useState<string | null>(null);
+  const [shareLoading, setShareLoading] = useState(true);
   useEffect(() => {
     const read = async () => {
-      if (typeof window === 'undefined') return;
+      if (typeof window === 'undefined') {
+        setShareLoading(false);
+        return;
+      }
       let raw: string | null = null;
       const sp = new URLSearchParams(window.location.search);
       raw = sp.get('share');
@@ -44,6 +48,7 @@ export function useCredentialVerify(vcId: string) {
       }
       if (!raw) {
         setShareParam(null);
+        setShareLoading(false);
         return;
       }
       try {
@@ -63,6 +68,7 @@ export function useCredentialVerify(vcId: string) {
         const json = new TextDecoder().decode(bytes);
         const obj = JSON.parse(json) as unknown;
         setShareParam(obj);
+        setShareLoading(false);
         return;
       } catch {}
       try {
@@ -70,10 +76,12 @@ export function useCredentialVerify(vcId: string) {
         if (resp.ok) {
           const obj = (await resp.json()) as unknown;
           setShareParam(obj);
+          setShareLoading(false);
           return;
         }
       } catch {}
       setShareParam(null);
+      setShareLoading(false);
     };
     read();
   }, []);
@@ -90,7 +98,14 @@ export function useCredentialVerify(vcId: string) {
             type?: string;
           };
           setRevealed(sp.revealedFields || null);
-          setShareType(typeof sp.type === 'string' ? sp.type : null);
+          const rawType = sp.type;
+          if (typeof rawType === 'string') {
+            setShareType(rawType);
+          } else if (Array.isArray(rawType)) {
+            setShareType(rawType.join(','));
+          } else {
+            setShareType(null);
+          }
           const st = sp.statement;
           const hasSt =
             typeof st === 'object' &&
@@ -172,5 +187,6 @@ export function useCredentialVerify(vcId: string) {
     hasVerified,
     hasZkProofInShare,
     shareType,
+    shareLoading,
   };
 }
