@@ -28,7 +28,8 @@ export function useIssueCredential() {
   const queryClient = useQueryClient();
 
   const { apiKey, setApiKey } = useActaApiKey();
-  const { vaultExists, createVault, checkSelfAuthorized, authorizeSelf } = useVault();
+  const { vaultExists, createVault, createSponsoredVault, checkSelfAuthorized, authorizeSelf } =
+    useVault();
 
   const [state, setState] = useState<IssueState>({
     template: null,
@@ -203,6 +204,27 @@ export function useIssueCredential() {
           // ignore
         }
       }
+
+      // Impacta Bootcamp template: ensure recipient has a vault via sponsored vault (sponsor = issuer, owner = recipient, did = owner DID).
+      const isImpactaTemplate = tpl.id === 'impacta-certificate';
+      if (isImpactaTemplate && !issuingToSelf && ownerG) {
+        const recipientDid = `did:pkh:stellar:${network === 'mainnet' ? 'public' : 'testnet'}:${ownerG}`;
+        try {
+          await createSponsoredVault({ owner: ownerG, didUri: recipientDid });
+        } catch (sponsoredErr: unknown) {
+          const msg =
+            sponsoredErr && typeof (sponsoredErr as Error).message === 'string'
+              ? (sponsoredErr as Error).message
+              : String(sponsoredErr);
+          // Vault already exists for this owner — continue to issue
+          if (/Vault already initialized|AlreadyInitialized|Error\(Contract,\s*#1\)/i.test(msg)) {
+            // continue
+          } else {
+            throw sponsoredErr;
+          }
+        }
+      }
+
       // When issuing to another (ownerG !== activeAddress), no vault creation or self-auth;
       // the recipient must have a vault; the contract auto-authorizes the issuer on first issuance.
 
@@ -323,6 +345,7 @@ export function useIssueCredential() {
     buildPreview,
     vaultExists,
     createVault,
+    createSponsoredVault,
     checkSelfAuthorized,
     authorizeSelf,
     queryClient,
