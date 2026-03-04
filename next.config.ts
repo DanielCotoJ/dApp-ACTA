@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['acta-builder'],
+  outputFileTracingRoot: process.cwd(),
   webpack: (config, { webpack }) => {
     config.resolve = config.resolve || {};
     config.resolve.fallback = {

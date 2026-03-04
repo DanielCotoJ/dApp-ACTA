@@ -25,7 +25,8 @@ export function useVerifyCard(status?: string | null) {
     const lower = key.toLowerCase();
     let text = raw;
     let isWallet = false;
-    if (lower === 'issuer' || lower === 'subject') {
+    const walletLike = raw.startsWith('did:') || /^G[0-9A-Za-z]{55}$/.test(raw);
+    if ((lower === 'issuer' || lower === 'subject' || lower === 'issuerdid') && walletLike) {
       const wallet = raw.startsWith('did:') ? (raw.split(':').pop() as string) : raw;
       text = shorten(wallet);
       isWallet = true;

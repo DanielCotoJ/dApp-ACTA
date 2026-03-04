@@ -4,17 +4,59 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Credential, ZkStatement } from '@/@types/credentials';
 
 export function useShareCredential(credential: Credential | null) {
-  const fields = useMemo(
-    () => [
+  const fields = useMemo(() => {
+    const isPresent = (value: unknown) =>
+      value !== undefined && value !== null && String(value) !== '';
+    const toLabel = (key: string) =>
+      key
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/_/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/^\w/, (m) => m.toUpperCase());
+    const c = (credential ?? {}) as Record<string, unknown>;
+
+    const isImpacta = typeof c.type === 'string' && c.type.includes('ImpactaCertificateCredential');
+
+    if (isImpacta) {
+      const next: Array<{ key: string; label: string }> = [];
+      if (isPresent(c.issuer)) next.push({ key: 'issuer', label: 'Issuer' });
+      if (isPresent(c.subject)) next.push({ key: 'subject', label: 'Holder DID' });
+      if (isPresent(c.type)) next.push({ key: 'type', label: 'Credential Type' });
+      if (isPresent(c.issuedAt)) next.push({ key: 'issuedAt', label: 'Issued At' });
+      if (isPresent(c.status)) next.push({ key: 'status', label: 'Status' });
+      if (isPresent(c.holderName)) next.push({ key: 'holderName', label: 'Holder Name' });
+      return next;
+    }
+    const base = [
+      { key: 'issuerDid', label: 'Issuer DID' },
       { key: 'issuer', label: 'Issuer' },
       { key: 'subject', label: 'Holder DID' },
       { key: 'type', label: 'Credential Type' },
       { key: 'issuedAt', label: 'Issued At' },
       { key: 'expirationDate', label: 'Expiration Date' },
       { key: 'status', label: 'Status' },
-    ],
-    []
-  );
+    ];
+    const reserved = new Set([
+      'id',
+      'title',
+      'raw',
+      'vaultRecord',
+      'birthDate',
+      'issuerName',
+      ...base.map((f) => f.key),
+    ]);
+    const next: Array<{ key: string; label: string }> = [];
+    for (const field of base) {
+      if (isPresent(c[field.key])) next.push(field);
+    }
+    for (const [key, value] of Object.entries(c)) {
+      if (reserved.has(key)) continue;
+      if (!isPresent(value)) continue;
+      next.push({ key, label: toLabel(key) });
+    }
+    return next;
+  }, [credential]);
 
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [copied, setCopied] = useState(false);
@@ -71,6 +113,7 @@ export function useShareCredential(credential: Credential | null) {
       try {
         const payload: Record<string, unknown> = { revealedFields };
         if (credential?.id) payload.vc_id = credential.id;
+        if (credential?.type) payload.type = credential.type;
         if (
           proof &&
           proof.statement !== ('none' as ZkStatement) &&
@@ -82,24 +125,34 @@ export function useShareCredential(credential: Credential | null) {
           payload.proof = proof.proof as unknown;
           if (typeof proof.ok === 'boolean') payload.ok = proof.ok as unknown;
         }
-        const resp = await fetch('/api/share', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        if (resp.ok) {
-          const j = (await resp.json()) as { id?: string };
-          if (j?.id) {
-            setShareParam(encodeURIComponent(j.id));
-            return;
-          }
-        }
+
         const json = JSON.stringify(payload);
+
+        // Prefer short share keys via /api/share so links stay compact (e.g. for X).
+        try {
+          const resp = await fetch('/api/share', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: json,
+          });
+          if (resp.ok) {
+            const data = (await resp.json()) as { id?: string } | null;
+            const id = data && typeof data.id === 'string' ? data.id : null;
+            if (id) {
+              setShareParam(encodeURIComponent(id));
+              return;
+            }
+          }
+        } catch {
+          // fall through to inline encoding if share API is unavailable
+        }
+
+        // Fallback: inline, URL-safe base64 payload.
         const bytes = new TextEncoder().encode(json);
         let binary = '';
         for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-        const encoded = encodeURIComponent(btoa(binary));
-        setShareParam(encoded);
+        const b64 = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+        setShareParam(encodeURIComponent(b64));
       } catch {
         setShareParam('');
       }

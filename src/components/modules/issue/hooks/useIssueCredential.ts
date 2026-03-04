@@ -28,7 +28,8 @@ export function useIssueCredential() {
   const queryClient = useQueryClient();
 
   const { apiKey, setApiKey } = useActaApiKey();
-  const { vaultExists, createVault, checkSelfAuthorized, authorizeSelf } = useVault();
+  const { vaultExists, createVault, createSponsoredVault, checkSelfAuthorized, authorizeSelf } =
+    useVault();
 
   const [state, setState] = useState<IssueState>({
     template: null,
@@ -40,6 +41,38 @@ export function useIssueCredential() {
     error: null,
     txId: null,
   });
+
+  const [issuanceCode, setIssuanceCode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('impacta_issuance_code') ?? '';
+    }
+    return '';
+  });
+  const [issuanceCodeValid, setIssuanceCodeValid] = useState<boolean | null>(null);
+
+  const handleSetIssuanceCode = useCallback(async (code: string) => {
+    setIssuanceCode(code);
+    if (typeof window !== 'undefined') {
+      if (code.trim()) {
+        sessionStorage.setItem('impacta_issuance_code', code);
+      } else {
+        sessionStorage.removeItem('impacta_issuance_code');
+      }
+    }
+    setIssuanceCodeValid(null);
+    if (!code.trim()) return;
+    try {
+      const res = await fetch('/api/verify-issuance-code', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ code: code.trim() }),
+      });
+      const data = (await res.json()) as { valid?: boolean };
+      setIssuanceCodeValid(data.valid === true);
+    } catch {
+      setIssuanceCodeValid(false);
+    }
+  }, []);
 
   const ownerDid = useMemo(() => {
     return walletAddress
@@ -86,7 +119,8 @@ export function useIssueCredential() {
 
     const nowIso = new Date().toISOString();
     const expiration = state.values['expirationDate'] || undefined;
-    const rawSubject = state.values['subject'] || '';
+    const hasSubjectField = tpl.fields.some((f) => f.key === 'subject');
+    const rawSubject = hasSubjectField ? state.values['subject'] || '' : state.owner.trim();
 
     const toSubjectDid = (input: string) => {
       if (!input) return '';
@@ -104,7 +138,7 @@ export function useIssueCredential() {
       credentialSubject[k] = v;
     }
 
-    const vc = {
+    const vc: Record<string, unknown> = {
       id: state.vcId,
       '@context': ['https://www.w3.org/2018/credentials/v1'],
       type: ['VerifiableCredential', tpl.vcType],
@@ -113,10 +147,14 @@ export function useIssueCredential() {
       expirationDate: expiration,
       credentialSubject,
     };
+    if (tpl.id === 'impacta-certificate') {
+      vc.issuerName = 'BAF';
+      vc.title = 'Impacta Bootcamp Certificate';
+    }
 
     setState((s) => ({ ...s, preview: vc }));
     return vc;
-  }, [state.template, state.values, ownerDid, network, state.vcId]);
+  }, [state.template, state.values, state.owner, ownerDid, network, state.vcId]);
 
   const validateRequired = useCallback(
     (fields: TemplateField[]) => {
@@ -136,6 +174,27 @@ export function useIssueCredential() {
 
     const tpl = state.template;
     if (!tpl) throw new Error('Select a template first');
+
+    const isImpactaTpl = tpl.id === 'impacta-certificate';
+
+    if (isImpactaTpl) {
+      if (!issuanceCode.trim()) {
+        const msg = 'Issuance code is required to issue Impacta certificates.';
+        setState((s) => ({ ...s, error: msg }));
+        throw new Error(msg);
+      }
+      const codeRes = await fetch('/api/verify-issuance-code', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ code: issuanceCode.trim() }),
+      });
+      const codeData = (await codeRes.json()) as { valid?: boolean; error?: string };
+      if (!codeData.valid) {
+        const msg = codeData.error || 'Invalid issuance code.';
+        setState((s) => ({ ...s, error: msg }));
+        throw new Error(msg);
+      }
+    }
 
     const trimmedApiKey = apiKey.trim();
     if (!trimmedApiKey) {
@@ -198,6 +257,27 @@ export function useIssueCredential() {
           // ignore
         }
       }
+
+      // Impacta Bootcamp template: ensure recipient has a vault via sponsored vault (sponsor = issuer, owner = recipient, did = owner DID).
+      const isImpactaTemplate = tpl.id === 'impacta-certificate';
+      if (isImpactaTemplate && !issuingToSelf && ownerG) {
+        const recipientDid = `did:pkh:stellar:${network === 'mainnet' ? 'public' : 'testnet'}:${ownerG}`;
+        try {
+          await createSponsoredVault({ owner: ownerG, didUri: recipientDid });
+        } catch (sponsoredErr: unknown) {
+          const msg =
+            sponsoredErr && typeof (sponsoredErr as Error).message === 'string'
+              ? (sponsoredErr as Error).message
+              : String(sponsoredErr);
+          // Vault already exists for this owner — continue to issue
+          if (/Vault already initialized|AlreadyInitialized|Error\(Contract,\s*#1\)/i.test(msg)) {
+            // continue
+          } else {
+            throw sponsoredErr;
+          }
+        }
+      }
+
       // When issuing to another (ownerG !== activeAddress), no vault creation or self-auth;
       // the recipient must have a vault; the contract auto-authorizes the issuer on first issuance.
 
@@ -318,9 +398,11 @@ export function useIssueCredential() {
     buildPreview,
     vaultExists,
     createVault,
+    createSponsoredVault,
     checkSelfAuthorized,
     authorizeSelf,
     queryClient,
+    issuanceCode,
   ]);
 
   return {
@@ -333,6 +415,9 @@ export function useIssueCredential() {
     setOwner,
     buildPreview,
     issue,
+    issuanceCode,
+    setIssuanceCode: handleSetIssuanceCode,
+    issuanceCodeValid,
   };
 }
 

@@ -10,8 +10,19 @@ import CustomTemplateBuilder from './CustomTemplateBuilder';
 
 export default function IssueBuilder() {
   const { templates, saveTemplate, deleteTemplate } = useCredentialTemplates();
-  const { state, apiKey, setApiKey, selectTemplate, setFieldValue, setOwner, buildPreview, issue } =
-    useIssueCredential();
+  const {
+    state,
+    apiKey,
+    setApiKey,
+    selectTemplate,
+    setFieldValue,
+    setOwner,
+    buildPreview,
+    issue,
+    issuanceCode,
+    setIssuanceCode,
+    issuanceCodeValid,
+  } = useIssueCredential();
 
   const [showBuilder, setShowBuilder] = useState(false);
 
@@ -60,6 +71,9 @@ export default function IssueBuilder() {
             onSubmit={async () => {
               await issue();
             }}
+            issuanceCode={issuanceCode}
+            onSetIssuanceCode={setIssuanceCode}
+            issuanceCodeValid={issuanceCodeValid}
           />
         </>
       )}

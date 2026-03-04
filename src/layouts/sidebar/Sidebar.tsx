@@ -1,7 +1,7 @@
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Sidebar, SidebarBody, SidebarLink } from '@/components/ui/aceternity-sidebar';
-import { Home, User, Book, ShieldCheck, FilePlus, Lock, KeyRound, Sparkles } from 'lucide-react';
+import { Home, User, Book, ShieldCheck, FilePlus, Lock, KeyRound } from 'lucide-react';
 
 export function AppSidebar() {
   const router = useRouter();
@@ -62,16 +62,6 @@ export function AppSidebar() {
           </div>
         </div>
         <div className="flex flex-col gap-2">
-          <SidebarLink
-            link={{
-              label: 'AI Assistant (Ctrl+K)',
-              href: '#',
-              icon: <Sparkles className="h-5 w-5 shrink-0 text-[#edeed1]" />,
-              onClick: () => {
-                window.dispatchEvent(new CustomEvent('open-ai-assistant'));
-              },
-            }}
-          />
           <SidebarLink
             link={{
               label: 'Settings',
