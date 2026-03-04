@@ -5,6 +5,7 @@ import { useShareCredential } from '@/components/modules/credentials/hooks/useSh
 import type { Credential } from '@/@types/credentials';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { CertificateCanvas } from '@/components/modules/credentials/ui/impacta-bootcamp/Certificate';
 
 export default function ShareCredentialModal({
   open,
@@ -34,6 +35,19 @@ export default function ShareCredentialModal({
   const hasDob = !!credential?.birthDate;
   const hasExp = !!credential?.expirationDate;
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
+
+  const isImpactaCertificate = !!credential?.type.includes('ImpactaCertificateCredential');
+
+  const impactaHolderName =
+    (credential as unknown as { holderName?: string | null })?.holderName ??
+    (credential?.raw as unknown as { credentialSubject?: { holderName?: string } } | null)
+      ?.credentialSubject?.holderName ??
+    undefined;
+
+  const impactaYear =
+    credential?.issuedAt && !Number.isNaN(Date.parse(credential.issuedAt))
+      ? new Date(credential.issuedAt).getFullYear().toString()
+      : undefined;
 
   useEffect(() => {
     (async () => {
@@ -166,6 +180,16 @@ export default function ShareCredentialModal({
             </div>
 
             <div className="flex flex-col gap-4">
+              {isImpactaCertificate && (
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 sm:p-4">
+                  <div className="w-full max-h-[420px] overflow-hidden rounded-lg bg-black/90 flex items-center justify-center">
+                    <div className="scale-[0.5] sm:scale-[0.6] origin-top">
+                      <CertificateCanvas holderName={impactaHolderName} year={impactaYear} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <div className="flex items-center justify-between gap-2 mb-3">
                   <h3 className="text-white font-medium text-sm">Select Fields</h3>

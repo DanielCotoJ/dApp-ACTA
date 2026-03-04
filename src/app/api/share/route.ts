@@ -2,14 +2,18 @@ import { NextResponse } from 'next/server';
 
 const store = new Map<string, unknown>();
 
+function createShortId(): string {
+  // Compact, URL-safe identifier (~16 chars) for shorter share links.
+  const part1 = Math.random().toString(36).slice(2, 10);
+  const part2 = Math.random().toString(36).slice(2, 6);
+  const raw = (part1 + part2).replace(/[^a-z0-9]/gi, '');
+  return raw.slice(0, 16) || Math.random().toString(36).slice(2, 10);
+}
+
 export async function POST(req: Request) {
   try {
     const data = await req.json();
-    const id = (
-      globalThis.crypto && 'randomUUID' in globalThis.crypto
-        ? (globalThis.crypto as unknown as { randomUUID: () => string }).randomUUID()
-        : Math.random().toString(36).slice(2)
-    ) as string;
+    const id = createShortId();
     store.set(id, data);
     return NextResponse.json({ id });
   } catch (e) {
