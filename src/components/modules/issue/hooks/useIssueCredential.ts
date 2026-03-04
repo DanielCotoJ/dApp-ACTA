@@ -42,11 +42,23 @@ export function useIssueCredential() {
     txId: null,
   });
 
-  const [issuanceCode, setIssuanceCode] = useState('');
+  const [issuanceCode, setIssuanceCode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('impacta_issuance_code') ?? '';
+    }
+    return '';
+  });
   const [issuanceCodeValid, setIssuanceCodeValid] = useState<boolean | null>(null);
 
   const handleSetIssuanceCode = useCallback(async (code: string) => {
     setIssuanceCode(code);
+    if (typeof window !== 'undefined') {
+      if (code.trim()) {
+        sessionStorage.setItem('impacta_issuance_code', code);
+      } else {
+        sessionStorage.removeItem('impacta_issuance_code');
+      }
+    }
     setIssuanceCodeValid(null);
     if (!code.trim()) return;
     try {

@@ -95,14 +95,14 @@ export function useCredentialVerify(vcId: string) {
             statement?: unknown;
             proof?: string;
             ok?: boolean;
-            type?: string;
+            type?: unknown;
           };
           setRevealed(sp.revealedFields || null);
           const rawType = sp.type;
           if (typeof rawType === 'string') {
             setShareType(rawType);
           } else if (Array.isArray(rawType)) {
-            setShareType(rawType.join(','));
+            setShareType((rawType as string[]).join(','));
           } else {
             setShareType(null);
           }
