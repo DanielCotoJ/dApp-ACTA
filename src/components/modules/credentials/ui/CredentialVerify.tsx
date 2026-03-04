@@ -26,11 +26,7 @@ export function CredentialVerify({ vcId }: { vcId: string }) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <svg
-            className="animate-spin h-8 w-8 text-white/60"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
+          <svg className="animate-spin h-8 w-8 text-white/60" fill="none" viewBox="0 0 24 24">
             <circle
               className="opacity-25"
               cx="12"
