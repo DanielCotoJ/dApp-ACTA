@@ -42,6 +42,26 @@ export function useIssueCredential() {
     txId: null,
   });
 
+  const [issuanceCode, setIssuanceCode] = useState('');
+  const [issuanceCodeValid, setIssuanceCodeValid] = useState<boolean | null>(null);
+
+  const handleSetIssuanceCode = useCallback(async (code: string) => {
+    setIssuanceCode(code);
+    setIssuanceCodeValid(null);
+    if (!code.trim()) return;
+    try {
+      const res = await fetch('/api/verify-issuance-code', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ code: code.trim() }),
+      });
+      const data = (await res.json()) as { valid?: boolean };
+      setIssuanceCodeValid(data.valid === true);
+    } catch {
+      setIssuanceCodeValid(false);
+    }
+  }, []);
+
   const ownerDid = useMemo(() => {
     return walletAddress
       ? `did:pkh:stellar:${network === 'mainnet' ? 'public' : 'testnet'}:${walletAddress}`
@@ -142,6 +162,27 @@ export function useIssueCredential() {
 
     const tpl = state.template;
     if (!tpl) throw new Error('Select a template first');
+
+    const isImpactaTpl = tpl.id === 'impacta-certificate';
+
+    if (isImpactaTpl) {
+      if (!issuanceCode.trim()) {
+        const msg = 'Issuance code is required to issue Impacta certificates.';
+        setState((s) => ({ ...s, error: msg }));
+        throw new Error(msg);
+      }
+      const codeRes = await fetch('/api/verify-issuance-code', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ code: issuanceCode.trim() }),
+      });
+      const codeData = (await codeRes.json()) as { valid?: boolean; error?: string };
+      if (!codeData.valid) {
+        const msg = codeData.error || 'Invalid issuance code.';
+        setState((s) => ({ ...s, error: msg }));
+        throw new Error(msg);
+      }
+    }
 
     const trimmedApiKey = apiKey.trim();
     if (!trimmedApiKey) {
@@ -349,6 +390,7 @@ export function useIssueCredential() {
     checkSelfAuthorized,
     authorizeSelf,
     queryClient,
+    issuanceCode,
   ]);
 
   return {
@@ -361,6 +403,9 @@ export function useIssueCredential() {
     setOwner,
     buildPreview,
     issue,
+    issuanceCode,
+    setIssuanceCode: handleSetIssuanceCode,
+    issuanceCodeValid,
   };
 }
 
