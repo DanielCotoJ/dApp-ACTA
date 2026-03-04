@@ -194,8 +194,8 @@ export default function DynamicIssueForm({
                   className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 text-white placeholder:text-zinc-500 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
                 />
                 <p className="mt-2 text-xs text-zinc-500">
-                  A valid issuance code is required to issue Impacta Bootcamp certificates.
-                  Contact an administrator if you don&apos;t have one.
+                  A valid issuance code is required to issue Impacta Bootcamp certificates. Contact
+                  an administrator if you don&apos;t have one.
                 </p>
               </div>
             ) : (
