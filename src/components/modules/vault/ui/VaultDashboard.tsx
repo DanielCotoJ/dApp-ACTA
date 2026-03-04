@@ -155,22 +155,7 @@ export default function VaultPage() {
     );
   }
 
-  const isCheckingVault = vaultExists === null && dashboardStatus === 'pending';
-  const shouldShowCreateVault = vaultExists === false;
-
-  if (isCheckingVault) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#edeed1] border-r-transparent mb-4" />
-          <p className="text-white/70">Checking vault...</p>
-          <p className="text-sm text-white/50 mt-1">Detecting if your wallet has a vault</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (shouldShowCreateVault) {
+  if (vaultExists === false) {
     if (showCreatingLoader) {
       return (
         <div className="min-h-screen flex items-center justify-center">
@@ -203,6 +188,18 @@ export default function VaultPage() {
               Create Vault
             </Button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (vaultExists !== true) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#edeed1] border-r-transparent mb-4" />
+          <p className="text-white/70">Checking vault...</p>
+          <p className="text-sm text-white/50 mt-1">Detecting if your wallet has a vault</p>
         </div>
       </div>
     );

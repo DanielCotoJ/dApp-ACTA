@@ -308,6 +308,59 @@ export function useVault() {
     [walletAddress, signTransaction, network, queryClient]
   );
 
+  const verifyVaultViaRpc = useCallback(
+    async (cfg: ApiConfig): Promise<boolean> => {
+      if (!walletAddress) return false;
+      try {
+        const server = new StellarSdk.rpc.Server(cfg.rpcUrl);
+
+        let sourceAccount: { sequenceNumber(): string };
+        try {
+          sourceAccount = await server.getAccount(walletAddress);
+        } catch {
+          return false;
+        }
+
+        const account = new StellarSdk.Account(walletAddress, sourceAccount.sequenceNumber());
+        const contract = new StellarSdk.Contract(cfg.actaContractId);
+
+        // list_vc_ids returns empty for both existing-empty vaults and
+        // non-existent vaults, so we simulate authorize_issuer instead:
+        // it throws Error(Contract, #8) when the vault hasn't been created.
+        const tx = new StellarSdk.TransactionBuilder(account, {
+          fee: StellarSdk.BASE_FEE.toString(),
+          networkPassphrase: cfg.networkPassphrase,
+        })
+          .addOperation(
+            contract.call(
+              'authorize_issuer',
+              StellarSdk.Address.fromString(walletAddress).toScVal(),
+              StellarSdk.Address.fromString(walletAddress).toScVal()
+            )
+          )
+          .setTimeout(60)
+          .build();
+
+        const sim = (await server.simulateTransaction(tx)) as { error?: unknown };
+        if (sim.error) {
+          const errStr = String(sim.error);
+          if (/Error\(Contract,\s*#8\)/.test(errStr) || /VaultNotInitialized/i.test(errStr)) {
+            return false;
+          }
+        }
+
+        return true;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (/VaultNotInitialized/i.test(msg) || /Error\(Contract,\s*#8\)/.test(msg)) {
+          return false;
+        }
+        return false;
+      }
+    },
+    [walletAddress]
+  );
+
   const readDashboard = useCallback(async () => {
     if (!walletAddress) {
       return {
@@ -319,13 +372,28 @@ export function useVault() {
     }
 
     try {
-      // If the list-vc-ids call succeeds, the vault exists (even if it's empty).
       const idsResp = await actaFetchJson<{ result: string[] }>({
         network,
         path: '/contracts/vault/list-vc-ids',
         body: { owner: walletAddress },
       });
       const ids = Array.isArray(idsResp?.result) ? idsResp.result : [];
+
+      // The API may return { result: [] } even when the vault doesn't exist.
+      // When the list is empty, verify vault existence directly against the
+      // smart contract via RPC simulation to avoid false positives.
+      if (ids.length === 0) {
+        const cfg = await ensureConfig();
+        const exists = await verifyVaultViaRpc(cfg);
+        if (!exists) {
+          return {
+            vaultExists: false,
+            vcIds: [] as string[],
+            vcs: [] as unknown[],
+            vcReadError: false,
+          };
+        }
+      }
 
       const items: unknown[] = [];
       for (const id of ids) {
@@ -375,7 +443,7 @@ export function useVault() {
         vcReadError: true,
       };
     }
-  }, [walletAddress, network]);
+  }, [walletAddress, network, ensureConfig, verifyVaultViaRpc]);
 
   const dashboardQuery = useQuery<{
     vaultExists: boolean | null;
@@ -392,25 +460,10 @@ export function useVault() {
     refetchInterval: typeof window !== 'undefined' ? 30_000 : false, // Poll every 30 seconds only on client
   });
 
-  const [vaultExists, setVaultExists] = useState<boolean | null>(null);
-  const [vcIds, setVcIds] = useState<string[] | null>(null);
-  const [vcs, setVcs] = useState<unknown[] | null>(null);
-  const [vcReadError, setVcReadError] = useState<boolean>(false);
-
-  useEffect(() => {
-    const data = dashboardQuery.data;
-    if (!data) {
-      setVaultExists(null);
-      setVcIds(null);
-      setVcs(null);
-      setVcReadError(false);
-      return;
-    }
-    setVaultExists(data.vaultExists);
-    setVcIds(data.vcIds);
-    setVcs(data.vcs);
-    setVcReadError(!!data.vcReadError);
-  }, [dashboardQuery.data]);
+  const vaultExists = dashboardQuery.data?.vaultExists ?? null;
+  const vcIds = dashboardQuery.data?.vcIds ?? null;
+  const vcs = dashboardQuery.data?.vcs ?? null;
+  const vcReadError = !!dashboardQuery.data?.vcReadError;
 
   // Force refetch when wallet address changes (only on client, after mount)
   useEffect(() => {
