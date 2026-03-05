@@ -36,7 +36,12 @@ function StepCard({
     </div>
   );
 
-  if (href) return <Link href={href} className="block">{inner}</Link>;
+  if (href)
+    return (
+      <Link href={href} className="block">
+        {inner}
+      </Link>
+    );
   if (onClick)
     return (
       <button type="button" onClick={onClick} className="text-left w-full">
@@ -79,15 +84,7 @@ function IconWrapper({ children }: { children: React.ReactNode }) {
 function buildSteps(onClose: () => void): TourStep[] {
   return [
     {
-      icon: (
-        <Image
-          src="/logo.png"
-          alt="ACTA"
-          width={32}
-          height={32}
-          className="w-8 h-8"
-        />
-      ),
+      icon: <Image src="/logo.png" alt="ACTA" width={32} height={32} className="w-8 h-8" />,
       title: 'Welcome to ACTA',
       description:
         'ACTA is a decentralized credential management platform built on Stellar. This guide will walk you through how to use each section of the app.',
@@ -99,10 +96,7 @@ function buildSteps(onClose: () => void): TourStep[] {
             href="/dashboard"
             onClick={onClose}
           />
-          <StepCard
-            label="Sidebar"
-            detail="Navigate between all pages from the left sidebar."
-          />
+          <StepCard label="Sidebar" detail="Navigate between all pages from the left sidebar." />
         </div>
       ),
     },
@@ -113,9 +107,18 @@ function buildSteps(onClose: () => void): TourStep[] {
         'Use the sidebar on the left to switch between pages. The header at the top lets you toggle between Testnet and Mainnet.',
       content: (
         <div className="space-y-3 mt-2">
-          <StepBullet bold="Sidebar" text="access Home, Issue, Authorize, Vault, API Keys, and Tutorials." />
-          <StepBullet bold="Settings" text="click your profile icon at the bottom of the sidebar to connect your wallet." />
-          <StepBullet bold="Network toggle" text="switch between Testnet and Mainnet from the top-right header." />
+          <StepBullet
+            bold="Sidebar"
+            text="access Home, Issue, Authorize, Vault, API Keys, and Tutorials."
+          />
+          <StepBullet
+            bold="Settings"
+            text="click your profile icon at the bottom of the sidebar to connect your wallet."
+          />
+          <StepBullet
+            bold="Network toggle"
+            text="switch between Testnet and Mainnet from the top-right header."
+          />
         </div>
       ),
     },
@@ -126,7 +129,10 @@ function buildSteps(onClose: () => void): TourStep[] {
         'Your vault is your on-chain credential storage. Create it once, then all credentials issued to you are stored here.',
       content: (
         <div className="space-y-3 mt-2">
-          <StepBullet bold="Create vault" text="go to the Vault page and create your personal vault." />
+          <StepBullet
+            bold="Create vault"
+            text="go to the Vault page and create your personal vault."
+          />
           <StepBullet bold="Search" text="find specific credentials using the search bar." />
           <StepBullet bold="Manage" text="expand, view JSON, share, or revoke any credential." />
           <StepAction label="Go to Vault" href="/dashboard/credentials" />
@@ -140,7 +146,10 @@ function buildSteps(onClose: () => void): TourStep[] {
         'Before anyone can issue credentials to your vault, you need to authorize their wallet address.',
       content: (
         <div className="space-y-3 mt-2">
-          <StepBullet bold="Add issuer" text="enter a wallet address to grant issuing permissions." />
+          <StepBullet
+            bold="Add issuer"
+            text="enter a wallet address to grant issuing permissions."
+          />
           <StepBullet bold="Manage list" text="view and remove authorized issuers at any time." />
           <StepAction label="Go to Authorize" href="/dashboard/authorize" />
         </div>
@@ -153,14 +162,8 @@ function buildSteps(onClose: () => void): TourStep[] {
         'Create and issue credentials using built-in or custom templates. Fill in the details and issue to any authorized vault.',
       content: (
         <div className="grid grid-cols-2 gap-3 mt-2">
-          <StepCard
-            label="Built-in Templates"
-            detail="Pre-made templates ready to use."
-          />
-          <StepCard
-            label="Custom Templates"
-            detail="Build your own credential structure."
-          />
+          <StepCard label="Built-in Templates" detail="Pre-made templates ready to use." />
+          <StepCard label="Custom Templates" detail="Build your own credential structure." />
         </div>
       ),
     },
@@ -171,9 +174,18 @@ function buildSteps(onClose: () => void): TourStep[] {
         'Share credentials with anyone via a unique link. Recipients can verify authenticity on-chain.',
       content: (
         <div className="space-y-3 mt-2">
-          <StepBullet bold="Share" text="open any credential in your vault and click Share to generate a link." />
-          <StepBullet bold="ZK Proofs" text="choose which fields to reveal using zero-knowledge predicates." />
-          <StepBullet bold="Verify" text="anyone with the link can verify the credential without needing a wallet." />
+          <StepBullet
+            bold="Share"
+            text="open any credential in your vault and click Share to generate a link."
+          />
+          <StepBullet
+            bold="ZK Proofs"
+            text="choose which fields to reveal using zero-knowledge predicates."
+          />
+          <StepBullet
+            bold="Verify"
+            text="anyone with the link can verify the credential without needing a wallet."
+          />
         </div>
       ),
     },
@@ -202,13 +214,7 @@ function buildSteps(onClose: () => void): TourStep[] {
   ];
 }
 
-export default function GuidedTour({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+export default function GuidedTour({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [current, setCurrent] = useState(0);
   const steps = buildSteps(onClose);
   const total = steps.length;
