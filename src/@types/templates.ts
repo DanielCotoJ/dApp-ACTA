@@ -12,4 +12,5 @@ export type CredentialTemplate = {
   description: string;
   vcType: string;
   fields: TemplateField[];
+  iconSrc?: string;
 };
