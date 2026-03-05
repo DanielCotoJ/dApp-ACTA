@@ -17,6 +17,55 @@ type ApiConfig = {
 
 type TxPrepareResponse = { xdr: string; network: string };
 
+/**
+ * Returns true if the given owner address already has a vault (so sponsored vault creation can be skipped).
+ * Uses RPC simulation of authorize_issuer(owner, owner); contract returns #8 when vault does not exist.
+ */
+export async function checkVaultExistsForOwner(
+  cfg: ApiConfig,
+  ownerAddress: string
+): Promise<boolean> {
+  try {
+    const server = new StellarSdk.rpc.Server(cfg.rpcUrl);
+    let sourceAccount: { sequenceNumber(): string };
+    try {
+      sourceAccount = await server.getAccount(ownerAddress);
+    } catch {
+      return false;
+    }
+    const account = new StellarSdk.Account(ownerAddress, sourceAccount.sequenceNumber());
+    const contract = new StellarSdk.Contract(cfg.actaContractId);
+    const tx = new StellarSdk.TransactionBuilder(account, {
+      fee: StellarSdk.BASE_FEE.toString(),
+      networkPassphrase: cfg.networkPassphrase,
+    })
+      .addOperation(
+        contract.call(
+          'authorize_issuer',
+          StellarSdk.Address.fromString(ownerAddress).toScVal(),
+          StellarSdk.Address.fromString(ownerAddress).toScVal()
+        )
+      )
+      .setTimeout(60)
+      .build();
+
+    const sim = (await server.simulateTransaction(tx)) as { error?: unknown };
+    if (sim.error) {
+      const errStr = String(sim.error);
+      if (/Error\(Contract,\s*#8\)/.test(errStr) || /VaultNotInitialized/i.test(errStr)) {
+        return false;
+      }
+    }
+    return true;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (/VaultNotInitialized/i.test(msg) || /Error\(Contract,\s*#8\)/.test(msg)) {
+      return false;
+    }
+    return false;
+  }
+}
+
 async function fetchApiConfig(params: { network: 'testnet' | 'mainnet'; apiKey?: string }) {
   return actaFetchJson<ApiConfig>({
     network: params.network,
