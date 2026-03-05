@@ -76,7 +76,7 @@ export function useIssueCredential() {
 
   const ownerDid = useMemo(() => {
     return walletAddress
-      ? `did:pkh:stellar:${network === 'mainnet' ? 'public' : 'testnet'}:${walletAddress}`
+      ? `did:pkh:stellar:${network === 'mainnet' ? 'mainnet' : 'testnet'}:${walletAddress}`
       : undefined;
   }, [walletAddress, network]);
 
@@ -126,7 +126,7 @@ export function useIssueCredential() {
       if (!input) return '';
       const trimmed = input.trim();
       if (trimmed.startsWith('did:')) return trimmed;
-      const env = network === 'mainnet' ? 'public' : 'testnet';
+      const env = network === 'mainnet' ? 'mainnet' : 'testnet';
       return `did:pkh:stellar:${env}:${trimmed}`;
     };
 
@@ -261,7 +261,7 @@ export function useIssueCredential() {
       // Impacta Bootcamp template: ensure recipient has a vault via sponsored vault (sponsor = issuer, owner = recipient, did = owner DID).
       const isImpactaTemplate = tpl.id === 'impacta-certificate';
       if (isImpactaTemplate && !issuingToSelf && ownerG) {
-        const recipientDid = `did:pkh:stellar:${network === 'mainnet' ? 'public' : 'testnet'}:${ownerG}`;
+        const recipientDid = `did:pkh:stellar:${network === 'mainnet' ? 'mainnet' : 'testnet'}:${ownerG}`;
         try {
           await createSponsoredVault({ owner: ownerG, didUri: recipientDid });
         } catch (sponsoredErr: unknown) {
@@ -295,7 +295,7 @@ export function useIssueCredential() {
       });
 
       // Prepare issuance: owner = recipient (ownerG), issuer = signer (activeAddress).
-      const issuerDidLocal = `did:pkh:stellar:${network === 'mainnet' ? 'public' : 'testnet'}:${activeAddress}`;
+      const issuerDidLocal = `did:pkh:stellar:${network === 'mainnet' ? 'mainnet' : 'testnet'}:${activeAddress}`;
       const prep = await actaFetchJson<TxPrepareResp>({
         network,
         apiKey: trimmedApiKey,
@@ -324,7 +324,7 @@ export function useIssueCredential() {
 
       setState((s) => ({ ...s, issuing: false, txId: submit.tx_id }));
 
-      const net = network === 'mainnet' ? 'public' : 'testnet';
+      const net = network === 'mainnet' ? 'mainnet' : 'testnet';
       const url = `https://stellar.expert/explorer/${net}/tx/${submit.tx_id}`;
 
       toast.success('Credential issued', {
