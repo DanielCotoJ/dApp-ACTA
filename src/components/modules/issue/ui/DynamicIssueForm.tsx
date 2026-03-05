@@ -175,7 +175,37 @@ export default function DynamicIssueForm({
                 </div>
               ))}
 
-            {isImpacta ? (
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">
+                API Key {isImpacta ? '(admin) *' : '*'}{' '}
+                {keyValidated && <span className="text-green-500 text-xs">✓ Validated</span>}
+              </label>
+              <input
+                type="password"
+                value={apiKey}
+                placeholder={
+                  isImpacta
+                    ? 'Paste your admin API key here'
+                    : 'Paste your API key here (can be a custom early/custom key)'
+                }
+                onChange={(e) => handleApiKeyChange(e.target.value)}
+                disabled={validatingKey}
+                className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 text-white placeholder:text-zinc-500 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all disabled:opacity-50"
+              />
+              {keyValidationError && (
+                <p className="mt-2 text-xs text-red-400">{keyValidationError}</p>
+              )}
+              {validatingKey && (
+                <p className="mt-2 text-xs text-zinc-500">Validating API key...</p>
+              )}
+              <p className="mt-2 text-xs text-zinc-500">
+                {isImpacta
+                  ? 'An admin API key is required to verify the issuance code and issue Impacta certificates.'
+                  : 'If you have an early or custom API key provided by the team, you can use it here. Otherwise, generate one from the API Keys page.'}
+              </p>
+            </div>
+
+            {isImpacta && (
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
                   Issuance Code *{' '}
@@ -196,31 +226,6 @@ export default function DynamicIssueForm({
                 <p className="mt-2 text-xs text-zinc-500">
                   A valid issuance code is required to issue Impacta Bootcamp certificates. Contact
                   an administrator if you don&apos;t have one.
-                </p>
-              </div>
-            ) : (
-              <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  API Key *{' '}
-                  {keyValidated && <span className="text-green-500 text-xs">✓ Validated</span>}
-                </label>
-                <input
-                  type="password"
-                  value={apiKey}
-                  placeholder="Paste your API key here (can be a custom early/custom key)"
-                  onChange={(e) => handleApiKeyChange(e.target.value)}
-                  disabled={validatingKey}
-                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 text-white placeholder:text-zinc-500 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all disabled:opacity-50"
-                />
-                {keyValidationError && (
-                  <p className="mt-2 text-xs text-red-400">{keyValidationError}</p>
-                )}
-                {validatingKey && (
-                  <p className="mt-2 text-xs text-zinc-500">Validating API key...</p>
-                )}
-                <p className="mt-2 text-xs text-zinc-500">
-                  If you have an early or custom API key provided by the team, you can use it here.
-                  Otherwise, generate one from the API Keys page.
                 </p>
               </div>
             )}
