@@ -9,10 +9,7 @@ import { useNetwork } from '@/providers/network.provider';
 import { mapContractErrorToMessage } from '@/lib/utils';
 import { actaFetchJson } from '@/lib/actaApi';
 
-import {
-  useVault,
-  checkVaultExistsForOwner,
-} from '@/components/modules/vault/hooks/use-vault';
+import { useVault, checkVaultExistsForOwner } from '@/components/modules/vault/hooks/use-vault';
 import { useActaApiKey } from '@/components/modules/vault/hooks/use-acta-api-key';
 
 import type { CredentialTemplate, TemplateField } from '@/@types/templates';

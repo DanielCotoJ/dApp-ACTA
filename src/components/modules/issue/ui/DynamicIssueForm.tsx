@@ -195,9 +195,7 @@ export default function DynamicIssueForm({
               {keyValidationError && (
                 <p className="mt-2 text-xs text-red-400">{keyValidationError}</p>
               )}
-              {validatingKey && (
-                <p className="mt-2 text-xs text-zinc-500">Validating API key...</p>
-              )}
+              {validatingKey && <p className="mt-2 text-xs text-zinc-500">Validating API key...</p>}
               <p className="mt-2 text-xs text-zinc-500">
                 {isImpacta
                   ? 'An admin API key is required to verify the issuance code and issue Impacta certificates.'
