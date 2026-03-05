@@ -106,10 +106,7 @@ function buildSteps(onClose: () => void): TourStep[] {
         'Use the sidebar on the left to switch between pages. The header at the top lets you toggle between Testnet and Mainnet.',
       content: (
         <div className="space-y-3 mt-2">
-          <StepBullet
-            bold="Sidebar"
-            text="access Home, Issue, Authorize, Vault, and API Keys."
-          />
+          <StepBullet bold="Sidebar" text="access Home, Issue, Authorize, Vault, and API Keys." />
           <StepBullet
             bold="Settings"
             text="click your profile icon at the bottom of the sidebar to connect your wallet."

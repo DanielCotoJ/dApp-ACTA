@@ -64,7 +64,11 @@ export function useCredentialVerify(vcId: string) {
         for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
         const json = new TextDecoder().decode(bytes);
         const obj = JSON.parse(json) as unknown;
-        if (obj && typeof obj === 'object' && 'revealedFields' in (obj as Record<string, unknown>)) {
+        if (
+          obj &&
+          typeof obj === 'object' &&
+          'revealedFields' in (obj as Record<string, unknown>)
+        ) {
           setShareParam(obj);
           setShareLoading(false);
           return;
