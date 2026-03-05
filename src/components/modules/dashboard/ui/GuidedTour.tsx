@@ -12,7 +12,6 @@ import {
   FilePlus,
   Share2,
   KeyRound,
-  Book,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -107,10 +106,7 @@ function buildSteps(onClose: () => void): TourStep[] {
         'Use the sidebar on the left to switch between pages. The header at the top lets you toggle between Testnet and Mainnet.',
       content: (
         <div className="space-y-3 mt-2">
-          <StepBullet
-            bold="Sidebar"
-            text="access Home, Issue, Authorize, Vault, API Keys, and Tutorials."
-          />
+          <StepBullet bold="Sidebar" text="access Home, Issue, Authorize, Vault, and API Keys." />
           <StepBullet
             bold="Settings"
             text="click your profile icon at the bottom of the sidebar to connect your wallet."
@@ -197,17 +193,6 @@ function buildSteps(onClose: () => void): TourStep[] {
       content: (
         <div className="mt-2">
           <StepAction label="Go to API Keys" href="/dashboard/api-keys" />
-        </div>
-      ),
-    },
-    {
-      icon: <Book className="w-7 h-7 text-[#edeed1]" />,
-      title: 'Tutorials & Resources',
-      description:
-        'Watch step-by-step video tutorials to learn how each feature works. Track your progress as you complete them.',
-      content: (
-        <div className="mt-2">
-          <StepAction label="Go to Tutorials" href="/dashboard/tutorials" />
         </div>
       ),
     },

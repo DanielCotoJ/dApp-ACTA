@@ -1,7 +1,7 @@
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Sidebar, SidebarBody, SidebarLink } from '@/components/ui/aceternity-sidebar';
-import { Home, User, Book, ShieldCheck, FilePlus, Lock, KeyRound, Compass } from 'lucide-react';
+import { Home, User, ShieldCheck, FilePlus, Lock, KeyRound, Compass } from 'lucide-react';
 
 export function AppSidebar() {
   const router = useRouter();
@@ -44,11 +44,6 @@ export function AppSidebar() {
       label: 'Vault',
       href: '/dashboard/credentials',
       icon: <Lock className="h-5 w-5 shrink-0 text-neutral-200" />,
-    },
-    {
-      label: 'Tutorials',
-      href: '/dashboard/tutorials',
-      icon: <Book className="h-5 w-5 shrink-0 text-neutral-200" />,
     },
   ];
   return (
