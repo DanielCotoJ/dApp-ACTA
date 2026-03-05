@@ -11,7 +11,11 @@ import type {
 export const CertificateCanvas = forwardRef<HTMLDivElement, CertificateCanvasProps>(
   function CertificateCanvas({ holderName, year = 2026 }, ref) {
     return (
-      <div ref={ref} className="relative w-full max-w-[1200px]" style={{ containerType: 'inline-size' }}>
+      <div
+        ref={ref}
+        className="relative w-full max-w-[1200px]"
+        style={{ containerType: 'inline-size' }}
+      >
         <div className="relative w-full aspect-[1.414/1] bg-[#0000FF] overflow-hidden">
           {/* Decorative thin white border line (partial frame) */}
           <svg
