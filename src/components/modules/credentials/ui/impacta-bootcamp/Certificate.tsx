@@ -11,7 +11,7 @@ import type {
 export const CertificateCanvas = forwardRef<HTMLDivElement, CertificateCanvasProps>(
   function CertificateCanvas({ holderName, year = 2026 }, ref) {
     return (
-      <div ref={ref} className="relative w-full max-w-[1200px]">
+      <div ref={ref} className="relative w-full max-w-[1200px]" style={{ containerType: 'inline-size' }}>
         <div className="relative w-full aspect-[1.414/1] bg-[#0000FF] overflow-hidden">
           {/* Decorative thin white border line (partial frame) */}
           <svg
@@ -58,7 +58,7 @@ export const CertificateCanvas = forwardRef<HTMLDivElement, CertificateCanvasPro
           </svg>
 
           {/* Top-left: Impacta Logo */}
-          <div className="absolute top-[3%] left-[3%] w-[8%] float-soft">
+          <div className="absolute top-[3%] left-[3%] w-[10%] float-soft">
             <Image
               src="/assets/impacta-bootcamp/impacta-logo.svg"
               alt="Impacta Bootcamp logo"
@@ -70,7 +70,7 @@ export const CertificateCanvas = forwardRef<HTMLDivElement, CertificateCanvasPro
           </div>
 
           {/* Top: Row of Asteriscs */}
-          <div className="absolute top-[3.2%] left-[12.5%] w-[20%] float-soft-delayed">
+          <div className="absolute top-[3.2%] left-[14%] w-[23%] float-soft-delayed">
             <Image
               src="/assets/impacta-bootcamp/asteriscs.svg"
               alt="Asteriscs decorativos"
@@ -82,7 +82,7 @@ export const CertificateCanvas = forwardRef<HTMLDivElement, CertificateCanvasPro
           </div>
 
           {/* Top-right: Corner Seal (globe + asterisk) in white box */}
-          <div className="absolute top-[2%] right-[2%] w-[5.8%] bg-white p-[0.3%] float-soft">
+          <div className="absolute top-[2%] right-[2%] w-[7%] bg-white p-[0.3%] float-soft">
             <Image
               src="/assets/impacta-bootcamp/corner-seal.svg"
               alt="Sello de esquina"
@@ -94,7 +94,7 @@ export const CertificateCanvas = forwardRef<HTMLDivElement, CertificateCanvasPro
           </div>
 
           {/* Left side: Circles / Coil */}
-          <div className="absolute top-[24%] left-[3%] w-[18%] float-soft-delayed">
+          <div className="absolute top-[24%] left-[3%] w-[21%] float-soft-delayed">
             <Image
               src="/assets/impacta-bootcamp/circles.svg"
               alt="Circulos decorativos"
@@ -106,7 +106,7 @@ export const CertificateCanvas = forwardRef<HTMLDivElement, CertificateCanvasPro
           </div>
 
           {/* Right side: Latam Map Outline with dots */}
-          <div className="absolute top-[12%] right-[3%] w-[44%] float-soft">
+          <div className="absolute top-[12%] right-[3%] w-[48%] float-soft">
             <Image
               src="/assets/impacta-bootcamp/latam-outline.svg"
               alt="Mapa de Latinoamerica"
@@ -118,9 +118,9 @@ export const CertificateCanvas = forwardRef<HTMLDivElement, CertificateCanvasPro
           </div>
 
           {/* Main Title: CERTIFICADO DE PARTICIPACION */}
-          <div className="absolute top-[38%] left-[3%]">
-            <div className="bg-white inline-block px-[1.2vw] py-[0.5vw]">
-              <h1 className="font-sans font-black text-[#0000FF] text-[3vw] leading-tight tracking-[-0.02em] whitespace-nowrap uppercase">
+          <div className="absolute top-[36%] left-[3%]">
+            <div className="bg-white inline-block px-[1.4cqi] py-[0.6cqi]">
+              <h1 className="font-sans font-black text-[#0000FF] text-[3.4cqi] leading-tight tracking-[-0.02em] whitespace-nowrap uppercase">
                 {'Certificado de Participaci\u00F3n'}
               </h1>
             </div>
@@ -128,16 +128,16 @@ export const CertificateCanvas = forwardRef<HTMLDivElement, CertificateCanvasPro
 
           {/* Subtitle text */}
           <div className="absolute top-[49%] left-[3%]">
-            <p className="font-sans text-white/90 text-[1.3vw] leading-relaxed">
+            <p className="font-sans text-white/90 text-[1.6cqi] leading-relaxed">
               Se otorga el presente reconocimiento a:
             </p>
           </div>
 
           {/* Name line */}
-          <div className="absolute top-[60%] left-[3%] w-[52%]">
+          <div className="absolute top-[58%] left-[3%] w-[52%]">
             <div className="relative border-b border-white/60 w-full">
               {holderName && (
-                <span className="absolute -translate-y-[95%] font-sans text-white text-[2vw] tracking-[0.12em] uppercase whitespace-nowrap">
+                <span className="absolute -translate-y-[95%] font-sans text-white text-[2.4cqi] tracking-[0.12em] uppercase whitespace-nowrap">
                   {holderName}
                 </span>
               )}
@@ -145,8 +145,8 @@ export const CertificateCanvas = forwardRef<HTMLDivElement, CertificateCanvasPro
           </div>
 
           {/* Description text */}
-          <div className="absolute top-[68%] left-[3%] w-[42%]">
-            <p className="font-sans text-white/90 text-[1.05vw] leading-[1.7] italic">
+          <div className="absolute top-[66%] left-[3%] w-[46%]">
+            <p className="font-sans text-white/90 text-[1.3cqi] leading-[1.7] italic">
               Por haber completado <span className="font-bold">satisfactoriamente</span> los
               requisitos {'acad\u00E9micos'} y {'pr\u00E1cticos'} del programa intensivo{' '}
               <span className="font-bold not-italic">IMPACTA BOOTCAMP.</span>
@@ -155,13 +155,13 @@ export const CertificateCanvas = forwardRef<HTMLDivElement, CertificateCanvasPro
 
           {/* Year */}
           <div className="absolute bottom-[3%] right-[4%]">
-            <span className="font-sans font-bold text-white text-[5.5vw] leading-none tracking-[-0.02em]">
+            <span className="font-sans font-bold text-white text-[5.5cqi] leading-none tracking-[-0.02em]">
               {String(year)}
             </span>
           </div>
 
           {/* Bottom-right: Corner Dots */}
-          <div className="absolute bottom-[14%] right-[1.5%] w-[4.5%] float-soft-delayed">
+          <div className="absolute bottom-[14%] right-[1.5%] w-[5.5%] float-soft-delayed">
             <Image
               src="/assets/impacta-bootcamp/corner-dots.svg"
               alt="Puntos decorativos"
@@ -174,13 +174,13 @@ export const CertificateCanvas = forwardRef<HTMLDivElement, CertificateCanvasPro
 
           {/* Bottom-left: Sponsor Logos (Stellar x BAF x Trustless) in white box */}
           <div className="absolute bottom-0 left-0">
-            <div className="bg-white px-[0.8vw] py-[0.6vw]">
+            <div className="bg-white px-[1.2cqi] py-[0.9cqi]">
               <Image
                 src="/assets/impacta-bootcamp/stellar-baf-trustless.svg"
                 alt="Stellar, BAF y Trustless logos"
                 width={218}
                 height={38}
-                className="w-[15vw] h-auto"
+                className="w-[24cqi] h-auto"
                 unoptimized
               />
             </div>
@@ -310,17 +310,14 @@ export default function Certificate(props: CertificateProps) {
   ].filter(Boolean) as { label: string; value: string }[];
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
-      <div className="w-full max-w-[1400px] flex flex-col lg:flex-row items-center lg:items-start justify-center gap-4 lg:gap-1.5">
-        {/* Certificado a la izquierda */}
-        <div className="w-full max-w-[900px] lg:max-w-[900px] shrink-0">
-          <div className="scale-[0.8] sm:scale-[0.75] origin-top-left w-full">
-            <CertificateCanvas ref={certRef} holderName={props.holderName} year={derivedYear} />
-          </div>
+    <main className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4 py-6 sm:px-6 sm:py-8">
+      <div className="w-full max-w-[1400px] flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 lg:gap-8">
+        <div className="w-full lg:flex-1 lg:max-w-[820px]">
+          <CertificateCanvas ref={certRef} holderName={props.holderName} year={derivedYear} />
         </div>
 
         {details.length > 0 && (
-          <div className="w-full lg:w-[480px] shrink-0 flex flex-col gap-4">
+          <div className="w-full lg:w-[420px] shrink-0 flex flex-col gap-4">
             <div className="rounded-xl bg-black/80 border border-white/15 px-5 py-4 sm:px-6 sm:py-5 text-white">
               <div className="text-[11px] sm:text-xs tracking-[0.18em] text-white/50 uppercase mb-3">
                 Credential Details
