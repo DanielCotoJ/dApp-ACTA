@@ -2,8 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { Credential } from '@/@types/credentials';
+import { useNetwork } from '@/providers/network.provider';
+import { getActaApiBaseUrl } from '@/lib/actaApi';
 
 export function useShareCredential(credential: Credential | null) {
+  const { network } = useNetwork();
   const fields = useMemo(() => {
     const isPresent = (value: unknown) =>
       value !== undefined && value !== null && String(value) !== '';
@@ -92,6 +95,7 @@ export function useShareCredential(credential: Credential | null) {
 
   const [shareParam, setShareParam] = useState<string>('');
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const payload: Record<string, unknown> = { revealedFields };
@@ -100,36 +104,39 @@ export function useShareCredential(credential: Credential | null) {
 
         const json = JSON.stringify(payload);
 
-        // Prefer short share keys via /api/share so links stay compact (e.g. for X).
         try {
-          const resp = await fetch('/api/share', {
+          const apiBase = getActaApiBaseUrl(network);
+          const resp = await fetch(`${apiBase}/share`, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' },
             body: json,
           });
           if (resp.ok) {
             const data = (await resp.json()) as { id?: string } | null;
             const id = data && typeof data.id === 'string' ? data.id : null;
-            if (id) {
+            if (id && !cancelled) {
               setShareParam(encodeURIComponent(id));
               return;
             }
           }
         } catch {
-          // fall through to inline encoding if share API is unavailable
+          // API unavailable — fall through to inline Base64
         }
 
-        // Fallback: inline, URL-safe base64 payload.
+        if (cancelled) return;
         const bytes = new TextEncoder().encode(json);
         let binary = '';
         for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
         const b64 = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
         setShareParam(encodeURIComponent(b64));
       } catch {
-        setShareParam('');
+        if (!cancelled) setShareParam('');
       }
     })();
-  }, [revealedFields, credential]);
+    return () => {
+      cancelled = true;
+    };
+  }, [revealedFields, credential, network]);
 
   const onToggle = (key: string) => {
     setSelected((prev) => ({ ...prev, [key]: !prev[key] }));

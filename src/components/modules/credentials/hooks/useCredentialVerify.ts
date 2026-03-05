@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useNetwork } from '@/providers/network.provider';
 import { useWalletContext } from '@/providers/wallet.provider';
 import { useActaApiKey } from '@/components/modules/vault/hooks/use-acta-api-key';
-import { actaFetchJson } from '@/lib/actaApi';
+import { actaFetchJson, getActaApiBaseUrl } from '@/lib/actaApi';
 
 type VerifyResult = {
   vc_id: string;
@@ -45,14 +45,17 @@ export function useCredentialVerify(vcId: string) {
         setShareLoading(false);
         return;
       }
+
+      let decoded = '';
       try {
-        let b64 = '';
-        try {
-          b64 = decodeURIComponent(raw);
-        } catch {
-          b64 = raw;
-        }
-        b64 = b64.replace(/\s+/g, '');
+        decoded = decodeURIComponent(raw);
+      } catch {
+        decoded = raw;
+      }
+
+      // 1) Try inline Base64 decoding
+      try {
+        let b64 = decoded.replace(/\s+/g, '');
         b64 = b64.replace(/-/g, '+').replace(/_/g, '/');
         const pad = b64.length % 4;
         if (pad) b64 = b64 + '='.repeat(4 - pad);
@@ -61,12 +64,17 @@ export function useCredentialVerify(vcId: string) {
         for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
         const json = new TextDecoder().decode(bytes);
         const obj = JSON.parse(json) as unknown;
-        setShareParam(obj);
-        setShareLoading(false);
-        return;
+        if (obj && typeof obj === 'object' && 'revealedFields' in (obj as Record<string, unknown>)) {
+          setShareParam(obj);
+          setShareLoading(false);
+          return;
+        }
       } catch {}
+
+      // 2) Treat as short ID — fetch from persistent API
       try {
-        const resp = await fetch(`/api/share?key=${encodeURIComponent(raw)}`);
+        const apiBase = getActaApiBaseUrl(network);
+        const resp = await fetch(`${apiBase}/share/${encodeURIComponent(decoded)}`);
         if (resp.ok) {
           const obj = (await resp.json()) as unknown;
           setShareParam(obj);
@@ -74,11 +82,12 @@ export function useCredentialVerify(vcId: string) {
           return;
         }
       } catch {}
+
       setShareParam(null);
       setShareLoading(false);
     };
     read();
-  }, []);
+  }, [network]);
 
   useEffect(() => {
     const run = async () => {
