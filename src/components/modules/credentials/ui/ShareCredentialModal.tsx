@@ -16,24 +16,8 @@ export default function ShareCredentialModal({
   credential: Credential | null;
   onClose: () => void;
 }) {
-  const {
-    fields,
-    selected,
-    copied,
-    shareParam,
-    onSelectAll,
-    onUnselectAll,
-    onToggle,
-    onCopy,
-    predicate,
-    setPredicate,
-    loading,
-    error,
-    onGenerateProof,
-    isExpired,
-  } = useShareCredential(credential);
-  const hasDob = !!credential?.birthDate;
-  const hasExp = !!credential?.expirationDate;
+  const { fields, selected, copied, shareParam, onSelectAll, onUnselectAll, onToggle, onCopy } =
+    useShareCredential(credential);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
 
   const isImpactaCertificate = !!credential?.type.includes('ImpactaCertificateCredential');
@@ -211,7 +195,7 @@ export default function ShareCredentialModal({
 
                 <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
                   {fields
-                    .filter((f) => (hasExp ? true : f.key !== 'expirationDate'))
+                    .filter((f) => (credential?.expirationDate ? true : f.key !== 'expirationDate'))
                     .map((f) => (
                       <label
                         key={f.key}
@@ -228,102 +212,6 @@ export default function ShareCredentialModal({
                         />
                       </label>
                     ))}
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-5 h-5 rounded bg-zinc-800 flex items-center justify-center">
-                    <svg
-                      className="w-3 h-3 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="text-white font-medium text-sm">Zero-Knowledge Proof</h3>
-                </div>
-
-                <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
-                  Verify your credential without revealing private data
-                </p>
-
-                <div className="space-y-2.5">
-                  <div>
-                    <label className="text-xs text-zinc-400 font-medium mb-1.5 block">
-                      Predicate
-                    </label>
-                    <select
-                      value={predicate.kind}
-                      onChange={(e) =>
-                        setPredicate({
-                          kind: e.target.value as 'none' | 'isAdult' | 'notExpired' | 'isValid',
-                        })
-                      }
-                      className="w-full rounded-lg border border-zinc-800 bg-zinc-950 text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-zinc-700"
-                    >
-                      <option value="none">None</option>
-                      {hasDob && <option value="isAdult">Age ≥ 18</option>}
-                      {hasExp && <option value="notExpired">Not Expired</option>}
-                      <option value="isValid">Status is Valid</option>
-                    </select>
-                  </div>
-
-                  <button
-                    onClick={onGenerateProof}
-                    disabled={
-                      loading ||
-                      (predicate.kind === 'isAdult' && !hasDob) ||
-                      (predicate.kind === 'notExpired' && (isExpired || !hasExp))
-                    }
-                    className="w-full rounded-lg bg-white text-black px-4 py-2 text-sm font-semibold hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                  >
-                    {loading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Generating...
-                      </span>
-                    ) : (
-                      'Generate Proof'
-                    )}
-                  </button>
-
-                  {error && (
-                    <div className="text-xs text-red-400 bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-1.5">
-                      {error}
-                    </div>
-                  )}
-                  {predicate.kind === 'notExpired' && isExpired && (
-                    <div className="text-xs text-zinc-500 bg-zinc-900/50 rounded-lg px-3 py-1.5">
-                      This credential is expired
-                    </div>
-                  )}
-                  {predicate.kind === 'isAdult' && !hasDob && (
-                    <div className="text-xs text-zinc-500 bg-zinc-900/50 rounded-lg px-3 py-1.5">
-                      Birth date required to enable age proof
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

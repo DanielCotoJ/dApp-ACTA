@@ -1,10 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { ZkStatement } from '@/@types/credentials';
 import { useNetwork } from '@/providers/network.provider';
 import { useWalletContext } from '@/providers/wallet.provider';
-import { verifyZkProof } from '@/lib/zk';
 import { useActaApiKey } from '@/components/modules/vault/hooks/use-acta-api-key';
 import { actaFetchJson } from '@/lib/actaApi';
 
@@ -20,14 +18,10 @@ export function useCredentialVerify(vcId: string) {
   const { apiKey } = useActaApiKey();
   const [verify, setVerify] = useState<VerifyResult | null>(null);
   const [revealed, setRevealed] = useState<Record<string, unknown> | null>(null);
-  const [zkValid, setZkValid] = useState<boolean | null>(null);
-  const [zkStatement, setZkStatement] = useState<ZkStatement | null>(null);
-  const [hasVerified, setHasVerified] = useState(false);
-  const [reverifyLoading, setReverifyLoading] = useState(false);
   const [shareParam, setShareParam] = useState<unknown>(null);
-  const [hasZkProofInShare, setHasZkProofInShare] = useState(false);
   const [shareType, setShareType] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(true);
+
   useEffect(() => {
     const read = async () => {
       if (typeof window === 'undefined') {
@@ -92,9 +86,6 @@ export function useCredentialVerify(vcId: string) {
         if (shareParam && typeof shareParam === 'object') {
           const sp = shareParam as {
             revealedFields?: Record<string, unknown>;
-            statement?: unknown;
-            proof?: string;
-            ok?: boolean;
             type?: unknown;
           };
           setRevealed(sp.revealedFields || null);
@@ -106,24 +97,8 @@ export function useCredentialVerify(vcId: string) {
           } else {
             setShareType(null);
           }
-          const st = sp.statement;
-          const hasSt =
-            typeof st === 'object' &&
-            st &&
-            'kind' in st &&
-            (st as { kind?: string }).kind !== 'none';
-          const hasProof = typeof sp.proof === 'string' && sp.proof.length > 0;
-          const hasZk = Boolean(hasSt && hasProof);
-          setHasZkProofInShare(hasZk);
-          if (hasZk) {
-            setZkStatement(st as ZkStatement);
-          } else {
-            setZkStatement(null);
-          }
-          // No auto-verification: status must be shown only after user clicks
         }
 
-        // API-based verification requires API key + owner wallet address.
         if (vcId && walletAddress && apiKey.trim()) {
           try {
             const v = await actaFetchJson<{ status: string; since?: string }>({
@@ -148,44 +123,9 @@ export function useCredentialVerify(vcId: string) {
     run();
   }, [vcId, network, walletAddress, shareParam, apiKey]);
 
-  const reverify = async () => {
-    if (!shareParam || typeof shareParam !== 'object') return;
-    const sp = shareParam as {
-      statement?: {
-        kind?: string;
-        typeHash?: string;
-        expectedHash?: string;
-        valid?: string;
-      };
-      publicSignals?: string[];
-      proof?: string;
-      ok?: boolean;
-    };
-    try {
-      setReverifyLoading(true);
-      if (typeof sp.ok === 'boolean') {
-        setZkValid(sp.ok === true);
-        setHasVerified(true);
-        return;
-      }
-      const ok = await verifyZkProof(sp as unknown as typeof sp);
-      setZkValid(ok);
-      setHasVerified(true);
-    } catch {
-    } finally {
-      setReverifyLoading(false);
-    }
-  };
-
   return {
     verify,
     revealed,
-    zkValid,
-    zkStatement,
-    reverify,
-    reverifyLoading,
-    hasVerified,
-    hasZkProofInShare,
     shareType,
     shareLoading,
   };
