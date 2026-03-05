@@ -134,7 +134,7 @@ export function useCredentialsList() {
         const c = source.find((x) => x.id === vcId);
         void c;
         const { txId } = await revokeCredential(vcId);
-        const net = network === 'mainnet' ? 'public' : 'testnet';
+        const net = network === 'mainnet' ? 'mainnet' : 'testnet';
         const url = `https://stellar.expert/explorer/${net}/tx/${txId}`;
         toast.success('Credential revoked', {
           description: txId,

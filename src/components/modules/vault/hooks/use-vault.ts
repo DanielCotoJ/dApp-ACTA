@@ -68,7 +68,7 @@ export function useVault() {
 
   const ownerDid = useMemo(() => {
     return walletAddress
-      ? `did:pkh:stellar:${network === 'mainnet' ? 'public' : 'testnet'}:${walletAddress}`
+      ? `did:pkh:stellar:${network === 'mainnet' ? 'mainnet' : 'testnet'}:${walletAddress}`
       : null;
   }, [walletAddress, network]);
 

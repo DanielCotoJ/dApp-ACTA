@@ -73,7 +73,7 @@ export default function VaultPage() {
     (value: string) => {
       setSponsorOwnerAddress(value);
       if (value) {
-        const networkId = network === 'mainnet' ? 'public' : 'testnet';
+        const networkId = network === 'mainnet' ? 'mainnet' : 'testnet';
         setSponsorOwnerDid(`did:pkh:stellar:${networkId}:${value}`);
       } else {
         setSponsorOwnerDid('');
