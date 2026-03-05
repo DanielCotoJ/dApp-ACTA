@@ -5,12 +5,7 @@ import Image from 'next/image';
 import { useVerifyCard } from '@/components/modules/credentials/hooks/useVerifyCard';
 import type { CredentialVerifyProps } from '@/@types/credentials';
 
-export function CredentialVerifyCard({
-  vcId,
-  status,
-  since,
-  revealed,
-}: CredentialVerifyProps) {
+export function CredentialVerifyCard({ vcId, status, since, revealed }: CredentialVerifyProps) {
   const { displayStatus, formatRevealed, copy } = useVerifyCard(status);
   const StatusIcon =
     displayStatus === 'Revoked'

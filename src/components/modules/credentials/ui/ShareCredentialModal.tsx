@@ -16,16 +16,8 @@ export default function ShareCredentialModal({
   credential: Credential | null;
   onClose: () => void;
 }) {
-  const {
-    fields,
-    selected,
-    copied,
-    shareParam,
-    onSelectAll,
-    onUnselectAll,
-    onToggle,
-    onCopy,
-  } = useShareCredential(credential);
+  const { fields, selected, copied, shareParam, onSelectAll, onUnselectAll, onToggle, onCopy } =
+    useShareCredential(credential);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
 
   const isImpactaCertificate = !!credential?.type.includes('ImpactaCertificateCredential');
