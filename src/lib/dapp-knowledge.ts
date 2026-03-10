@@ -13,6 +13,7 @@ verifiable credentials on the Stellar blockchain using zero-knowledge proofs for
 - **Authorize Issuers** (\`/dashboard/authorize\`): Manage who can issue credentials on behalf of your vault. Add or remove authorized issuer addresses.
 - **Vault / Credentials** (\`/dashboard/credentials\`): View all credentials stored in your personal vault. Search, filter, share, or revoke credentials.
 - **API Keys** (\`/dashboard/api-keys\`): Generate and manage API keys for programmatic access to the ACTA API. Keys are network-specific (testnet / mainnet).
+- **Notifications** (\`/dashboard/notifications\`): View and manage your dApp notifications (credentials received, verified, expiring soon, revoked, issuer authorized/revoked).
 - **Tutorials** (\`/dashboard/tutorials\`): Watch video tutorials about using the ACTA platform.
 - **Settings**: Access your profile and wallet settings via the sidebar or the bottom nav on mobile.
 
