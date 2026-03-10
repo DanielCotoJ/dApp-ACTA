@@ -9,15 +9,34 @@ export type NotificationType =
   | 'issuer_authorized'
   | 'issuer_revoked';
 
-/** Canonical English label for each notification type. */
-export const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
-  credential_received: 'New Credential Received',
-  credential_verified: 'Credential Verified',
-  credential_expiring_soon: 'Credential Expiring Soon',
-  credential_revoked: 'Credential Revoked',
-  issuer_authorized: 'Issuer Authorized',
-  issuer_revoked: 'Issuer Authorization Revoked',
-};
+/** Canonical English copy for each notification type. */
+export const NOTIFICATION_TYPE_LABEL: Record<NotificationType, { title: string; message: string }> =
+  {
+    credential_received: {
+      title: 'New Credential Received',
+      message: 'You have received a new verifiable credential in your vault.',
+    },
+    credential_verified: {
+      title: 'Credential Verified',
+      message: 'Your credential has been successfully verified.',
+    },
+    credential_expiring_soon: {
+      title: 'Credential Expiring Soon',
+      message: 'One of your credentials is expiring soon. Review it in your vault.',
+    },
+    credential_revoked: {
+      title: 'Credential Revoked',
+      message: 'One of your credentials has been revoked.',
+    },
+    issuer_authorized: {
+      title: 'Issuer Authorized',
+      message: 'A new issuer has been authorized for your vault.',
+    },
+    issuer_revoked: {
+      title: 'Issuer Authorization Revoked',
+      message: 'An issuer authorization has been removed from your vault.',
+    },
+  };
 
 export interface NotificationMetadata {
   vc_id?: string;

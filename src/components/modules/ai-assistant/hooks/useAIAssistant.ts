@@ -11,6 +11,7 @@ const PAGE_ROUTES: Record<string, { label: string; path: string }> = {
   authorize: { label: 'Authorize Issuers', path: '/dashboard/authorize' },
   credentials: { label: 'Vault', path: '/dashboard/credentials' },
   'api-keys': { label: 'API Keys', path: '/dashboard/api-keys' },
+  notifications: { label: 'Notifications', path: '/dashboard/notifications' },
   tutorials: { label: 'Tutorials', path: '/dashboard/tutorials' },
 };
 
