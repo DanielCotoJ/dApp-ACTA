@@ -4,16 +4,7 @@ import { useNetwork } from '@/providers/network.provider';
 import { useState } from 'react';
 import { NetworkSwitchModal } from '@/components/ui/network-switch-modal';
 import { Sparkles } from 'lucide-react';
-import dynamic from 'next/dynamic';
-
-// Rendered client-only: depends on localStorage (walletAddress) which is unavailable on the server.
-const NotificationBell = dynamic(
-  () =>
-    import('@/components/modules/notifications/ui/NotificationBell').then((m) => ({
-      default: m.NotificationBell,
-    })),
-  { ssr: false }
-);
+import { NotificationBell } from '@/components/modules/notifications/ui/NotificationBell';
 
 export function HeaderHome() {
   const { network, setNetwork } = useNetwork();

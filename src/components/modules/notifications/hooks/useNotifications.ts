@@ -49,7 +49,15 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
   const enabled = !!(walletAddress && apiKey?.trim());
 
   const listQuery = useQuery<Notification[]>({
-    queryKey: ['notifications', 'list', walletAddress, network, options.unreadOnly, options.limit, options.offset],
+    queryKey: [
+      'notifications',
+      'list',
+      walletAddress,
+      network,
+      options.unreadOnly,
+      options.limit,
+      options.offset,
+    ],
     queryFn: async () => {
       if (!walletAddress || !apiKey?.trim()) return [];
       const path = buildListPath(walletAddress, network, options);

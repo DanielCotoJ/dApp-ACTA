@@ -12,19 +12,19 @@ export function useNotificationToast() {
   const showNotificationToast = useCallback(
     (notification: Notification) => {
       const vcId = notification.metadata?.vc_id;
-      const action =
-        vcId
-          ? {
-              label: 'View credential' as const,
-              onClick: () => router.push(`/credential/${vcId}`),
-            }
-          : {
-              label: 'View all' as const,
-              onClick: () => router.push('/dashboard/notifications'),
-            };
+      const action = vcId
+        ? {
+            label: 'View credential' as const,
+            onClick: () => router.push(`/credential/${vcId}`),
+          }
+        : {
+            label: 'View all' as const,
+            onClick: () => router.push('/dashboard/notifications'),
+          };
 
-      const title = NOTIFICATION_TYPE_LABEL[notification.type] ?? 'Notification';
-      const description = notification.message;
+      const copy = NOTIFICATION_TYPE_LABEL[notification.type];
+      const title = copy?.title ?? 'Notification';
+      const description = copy?.message ?? notification.message;
 
       switch (notification.type) {
         case 'credential_received':

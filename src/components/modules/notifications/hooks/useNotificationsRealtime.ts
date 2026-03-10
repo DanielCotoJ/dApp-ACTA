@@ -39,7 +39,9 @@ export function useNotificationsRealtime() {
   const hasInitializedRef = useRef(false);
 
   const enabled =
-    !!(walletAddress && apiKey?.trim()) && typeof pathname === 'string' && pathname.startsWith('/dashboard');
+    !!(walletAddress && apiKey?.trim()) &&
+    typeof pathname === 'string' &&
+    pathname.startsWith('/dashboard');
 
   const query = useQuery<Notification[]>({
     queryKey: ['notifications', 'realtime', walletAddress, network],
