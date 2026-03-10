@@ -5,28 +5,8 @@ import Image from 'next/image';
 import { useVerifyCard } from '@/components/modules/credentials/hooks/useVerifyCard';
 import type { CredentialVerifyProps } from '@/@types/credentials';
 
-export function CredentialVerifyCard({
-  vcId,
-  status,
-  since,
-  revealed,
-  zkValid,
-  zkStatement,
-  hasVerified,
-}: CredentialVerifyProps) {
+export function CredentialVerifyCard({ vcId, status, since, revealed }: CredentialVerifyProps) {
   const { displayStatus, formatRevealed, copy } = useVerifyCard(status);
-  const kind =
-    zkStatement && typeof zkStatement === 'object'
-      ? (zkStatement as { kind?: string }).kind
-      : undefined;
-  const testName =
-    kind === 'isAdult'
-      ? 'Age ≥ 18'
-      : kind === 'notExpired'
-        ? 'Not expired'
-        : kind === 'isValid'
-          ? 'Status is valid'
-          : undefined;
   const StatusIcon =
     displayStatus === 'Revoked'
       ? XCircle
@@ -84,41 +64,6 @@ export function CredentialVerifyCard({
             <div className="font-mono text-xs sm:text-sm text-zinc-300 break-words leading-relaxed">
               {vcId || '-'}
             </div>
-            {hasVerified && (
-              <>
-                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 items-center">
-                  <span className="text-sm sm:text-base font-medium text-white">ZK Proof</span>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-lg border ${
-                      zkValid
-                        ? 'bg-green-950/50 border-green-500/30 text-green-400'
-                        : zkValid === false
-                          ? 'bg-red-950/50 border-red-500/30 text-red-400'
-                          : 'bg-zinc-900 border-white/10 text-zinc-400'
-                    }`}
-                  >
-                    {zkValid == null ? 'Not provided' : zkValid ? 'Passed' : 'Failed'}
-                  </span>
-                </div>
-                {testName && (
-                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 items-center">
-                    <span className="text-sm sm:text-base font-medium text-white">Test</span>
-                    <span
-                      className={
-                        kind === 'isValid'
-                          ? 'text-xs px-2 py-1 rounded-lg border bg-zinc-900 border-green-500/30 text-green-400'
-                          : 'text-xs px-2 py-1 rounded-lg border bg-zinc-900 border-white/10 text-zinc-400'
-                      }
-                    >
-                      {testName}
-                    </span>
-                  </div>
-                )}
-                <div className="mt-2 text-xs sm:text-[13px] text-zinc-400">
-                  Verification uses the provided zero-knowledge proof; no private data is revealed.
-                </div>
-              </>
-            )}
           </div>
 
           {revealed && (

@@ -5,7 +5,7 @@ import { useVault } from '@/components/modules/vault/hooks/use-vault';
 
 function extractGFromDid(did?: string): string | null {
   if (!did) return null;
-  const m = did.match(/did:pkh:stellar:(public|testnet):([A-Z0-9]{56})/i);
+  const m = did.match(/did:pkh:stellar:(mainnet|testnet):([A-Z0-9]{56})/i);
   return m ? m[2] : null;
 }
 

@@ -4,20 +4,32 @@ import { useState, useCallback, useEffect } from 'react';
 import { useVault } from '@/components/modules/vault/hooks/use-vault';
 
 export function useVaultAuthorize() {
-  const { authorizeSelf, authorizeAddress, loading, checkSelfAuthorized } = useVault();
+  const { authorizeSelf, authorizeAddress, checkSelfAuthorized } = useVault();
   const [addressInput, setAddressInput] = useState<string>('');
   const [isSelfAuthorized, setIsSelfAuthorized] = useState<boolean>(false);
+  const [loadingSelf, setLoadingSelf] = useState<boolean>(false);
+  const [loadingAddress, setLoadingAddress] = useState<boolean>(false);
 
   const authorizeMe = useCallback(async () => {
-    const res = await authorizeSelf();
-    setIsSelfAuthorized(true);
-    return res;
+    setLoadingSelf(true);
+    try {
+      const res = await authorizeSelf();
+      setIsSelfAuthorized(true);
+      return res;
+    } finally {
+      setLoadingSelf(false);
+    }
   }, [authorizeSelf]);
 
   const authorizeWithInput = useCallback(async () => {
     const addr = addressInput.trim();
     if (!addr) throw new Error('Address required');
-    return authorizeAddress(addr);
+    setLoadingAddress(true);
+    try {
+      return await authorizeAddress(addr);
+    } finally {
+      setLoadingAddress(false);
+    }
   }, [authorizeAddress, addressInput]);
 
   useEffect(() => {
@@ -40,7 +52,8 @@ export function useVaultAuthorize() {
     setAddressInput,
     authorizeMe,
     authorizeWithInput,
-    loading,
+    loadingSelf,
+    loadingAddress,
     isSelfAuthorized,
   };
 }

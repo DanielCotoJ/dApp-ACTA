@@ -11,13 +11,6 @@ const eslintConfig = defineConfig([
       'react/no-unescaped-entities': 'off',
     },
   },
-  {
-    files: ['src/components/ui/LiquidEther.tsx'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      'react-hooks/unsupported-syntax': 'off',
-    },
-  },
 ]);
 
 export default eslintConfig;

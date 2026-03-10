@@ -9,7 +9,7 @@ import { useNetwork } from '@/providers/network.provider';
 import { mapContractErrorToMessage } from '@/lib/utils';
 import { actaFetchJson } from '@/lib/actaApi';
 
-import { useVault } from '@/components/modules/vault/hooks/use-vault';
+import { useVault, checkVaultExistsForOwner } from '@/components/modules/vault/hooks/use-vault';
 import { useActaApiKey } from '@/components/modules/vault/hooks/use-acta-api-key';
 
 import type { CredentialTemplate, TemplateField } from '@/@types/templates';
@@ -28,7 +28,8 @@ export function useIssueCredential() {
   const queryClient = useQueryClient();
 
   const { apiKey, setApiKey } = useActaApiKey();
-  const { vaultExists, createVault, checkSelfAuthorized, authorizeSelf } = useVault();
+  const { vaultExists, createVault, createSponsoredVault, checkSelfAuthorized, authorizeSelf } =
+    useVault();
 
   const [state, setState] = useState<IssueState>({
     template: null,
@@ -41,9 +42,48 @@ export function useIssueCredential() {
     txId: null,
   });
 
+  const [issuanceCode, setIssuanceCode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('impacta_issuance_code') ?? '';
+    }
+    return '';
+  });
+  const [issuanceCodeValid, setIssuanceCodeValid] = useState<boolean | null>(null);
+
+  const handleSetIssuanceCode = useCallback(
+    async (code: string) => {
+      setIssuanceCode(code);
+      if (typeof window !== 'undefined') {
+        if (code.trim()) {
+          sessionStorage.setItem('impacta_issuance_code', code);
+        } else {
+          sessionStorage.removeItem('impacta_issuance_code');
+        }
+      }
+      setIssuanceCodeValid(null);
+      if (!code.trim() || !apiKey.trim()) return;
+      try {
+        const res = await fetch('/api/verify-issuance-code', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            code: code.trim(),
+            adminApiKey: apiKey.trim(),
+            network,
+          }),
+        });
+        const data = (await res.json()) as { valid?: boolean };
+        setIssuanceCodeValid(data.valid === true);
+      } catch {
+        setIssuanceCodeValid(false);
+      }
+    },
+    [apiKey, network]
+  );
+
   const ownerDid = useMemo(() => {
     return walletAddress
-      ? `did:pkh:stellar:${network === 'mainnet' ? 'public' : 'testnet'}:${walletAddress}`
+      ? `did:pkh:stellar:${network === 'mainnet' ? 'mainnet' : 'testnet'}:${walletAddress}`
       : undefined;
   }, [walletAddress, network]);
 
@@ -86,13 +126,14 @@ export function useIssueCredential() {
 
     const nowIso = new Date().toISOString();
     const expiration = state.values['expirationDate'] || undefined;
-    const rawSubject = state.values['subject'] || '';
+    const hasSubjectField = tpl.fields.some((f) => f.key === 'subject');
+    const rawSubject = hasSubjectField ? state.values['subject'] || '' : state.owner.trim();
 
     const toSubjectDid = (input: string) => {
       if (!input) return '';
       const trimmed = input.trim();
       if (trimmed.startsWith('did:')) return trimmed;
-      const env = network === 'mainnet' ? 'public' : 'testnet';
+      const env = network === 'mainnet' ? 'mainnet' : 'testnet';
       return `did:pkh:stellar:${env}:${trimmed}`;
     };
 
@@ -104,7 +145,7 @@ export function useIssueCredential() {
       credentialSubject[k] = v;
     }
 
-    const vc = {
+    const vc: Record<string, unknown> = {
       id: state.vcId,
       '@context': ['https://www.w3.org/2018/credentials/v1'],
       type: ['VerifiableCredential', tpl.vcType],
@@ -113,10 +154,14 @@ export function useIssueCredential() {
       expirationDate: expiration,
       credentialSubject,
     };
+    if (tpl.id === 'impacta-certificate') {
+      vc.issuerName = 'BAF';
+      vc.title = 'Impacta Bootcamp Certificate';
+    }
 
     setState((s) => ({ ...s, preview: vc }));
     return vc;
-  }, [state.template, state.values, ownerDid, network, state.vcId]);
+  }, [state.template, state.values, state.owner, ownerDid, network, state.vcId]);
 
   const validateRequired = useCallback(
     (fields: TemplateField[]) => {
@@ -137,11 +182,36 @@ export function useIssueCredential() {
     const tpl = state.template;
     if (!tpl) throw new Error('Select a template first');
 
+    const isImpactaTpl = tpl.id === 'impacta-certificate';
+
     const trimmedApiKey = apiKey.trim();
     if (!trimmedApiKey) {
       const msg = 'API key is required to issue via API.';
       setState((s) => ({ ...s, error: msg }));
       throw new Error(msg);
+    }
+
+    if (isImpactaTpl) {
+      if (!issuanceCode.trim()) {
+        const msg = 'Issuance code is required to issue Impacta certificates.';
+        setState((s) => ({ ...s, error: msg }));
+        throw new Error(msg);
+      }
+      const codeRes = await fetch('/api/verify-issuance-code', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          code: issuanceCode.trim(),
+          adminApiKey: trimmedApiKey,
+          network,
+        }),
+      });
+      const codeData = (await codeRes.json()) as { valid?: boolean; error?: string };
+      if (!codeData.valid) {
+        const msg = codeData.error || 'Invalid issuance code.';
+        setState((s) => ({ ...s, error: msg }));
+        throw new Error(msg);
+      }
     }
 
     const requiredErr = validateRequired(tpl.fields);
@@ -198,24 +268,48 @@ export function useIssueCredential() {
           // ignore
         }
       }
-      // When issuing to another (ownerG !== activeAddress), no vault creation or self-auth;
-      // the recipient must have a vault; the contract auto-authorizes the issuer on first issuance.
 
-      const ensuredVcId = state.vcId || generateVcId();
-      if (!state.vcId) {
-        setState((s) => ({ ...s, vcId: ensuredVcId }));
-      }
-
-      // Read config from API (auth required).
-      const cfg = await actaFetchJson<{ networkPassphrase: string; actaContractId: string }>({
+      // Read config from API once (used for vault check and issuance).
+      const cfg = await actaFetchJson<{
+        rpcUrl: string;
+        networkPassphrase: string;
+        actaContractId: string;
+      }>({
         network,
         apiKey: trimmedApiKey,
         method: 'GET',
         path: '/config',
       });
 
+      // Impacta Bootcamp template: ensure recipient has a vault. Only call create_sponsored_vault if they don't have one (avoids Error(Contract, #1) AlreadyInitialized).
+      const isImpactaTemplate = tpl.id === 'impacta-certificate';
+      if (isImpactaTemplate && !issuingToSelf && ownerG) {
+        const recipientHasVault = await checkVaultExistsForOwner(cfg, ownerG);
+        if (!recipientHasVault) {
+          const recipientDid = `did:pkh:stellar:${network === 'mainnet' ? 'mainnet' : 'testnet'}:${ownerG}`;
+          try {
+            await createSponsoredVault({ owner: ownerG, didUri: recipientDid });
+          } catch (sponsoredErr: unknown) {
+            const msg =
+              sponsoredErr && typeof (sponsoredErr as Error).message === 'string'
+                ? (sponsoredErr as Error).message
+                : String(sponsoredErr);
+            if (/Vault already initialized|AlreadyInitialized|Error\(Contract,\s*#1\)/i.test(msg)) {
+              // race: vault was created meanwhile — continue
+            } else {
+              throw sponsoredErr;
+            }
+          }
+        }
+      }
+
+      const ensuredVcId = state.vcId || generateVcId();
+      if (!state.vcId) {
+        setState((s) => ({ ...s, vcId: ensuredVcId }));
+      }
+
       // Prepare issuance: owner = recipient (ownerG), issuer = signer (activeAddress).
-      const issuerDidLocal = `did:pkh:stellar:${network === 'mainnet' ? 'public' : 'testnet'}:${activeAddress}`;
+      const issuerDidLocal = `did:pkh:stellar:${network === 'mainnet' ? 'mainnet' : 'testnet'}:${activeAddress}`;
       const prep = await actaFetchJson<TxPrepareResp>({
         network,
         apiKey: trimmedApiKey,
@@ -244,7 +338,7 @@ export function useIssueCredential() {
 
       setState((s) => ({ ...s, issuing: false, txId: submit.tx_id }));
 
-      const net = network === 'mainnet' ? 'public' : 'testnet';
+      const net = network === 'mainnet' ? 'mainnet' : 'testnet';
       const url = `https://stellar.expert/explorer/${net}/tx/${submit.tx_id}`;
 
       toast.success('Credential issued', {
@@ -318,9 +412,11 @@ export function useIssueCredential() {
     buildPreview,
     vaultExists,
     createVault,
+    createSponsoredVault,
     checkSelfAuthorized,
     authorizeSelf,
     queryClient,
+    issuanceCode,
   ]);
 
   return {
@@ -333,6 +429,9 @@ export function useIssueCredential() {
     setOwner,
     buildPreview,
     issue,
+    issuanceCode,
+    setIssuanceCode: handleSetIssuanceCode,
+    issuanceCodeValid,
   };
 }
 

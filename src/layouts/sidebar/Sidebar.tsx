@@ -1,17 +1,7 @@
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Sidebar, SidebarBody, SidebarLink } from '@/components/ui/aceternity-sidebar';
-import {
-  Home,
-  User,
-  Book,
-  ShieldCheck,
-  FilePlus,
-  Lock,
-  KeyRound,
-  Sparkles,
-  Bell,
-} from 'lucide-react';
+import { Home, User, ShieldCheck, FilePlus, Lock, KeyRound, Compass, Bell } from 'lucide-react';
 
 export function AppSidebar() {
   const router = useRouter();
@@ -60,11 +50,6 @@ export function AppSidebar() {
       href: '/dashboard/notifications',
       icon: <Bell className="h-5 w-5 shrink-0 text-neutral-200" />,
     },
-    {
-      label: 'Tutorials',
-      href: '/dashboard/tutorials',
-      icon: <Book className="h-5 w-5 shrink-0 text-neutral-200" />,
-    },
   ];
   return (
     <Sidebar animate={true}>
@@ -79,11 +64,11 @@ export function AppSidebar() {
         <div className="flex flex-col gap-2">
           <SidebarLink
             link={{
-              label: 'AI Assistant (Ctrl+K)',
+              label: 'Guided Tour',
               href: '#',
-              icon: <Sparkles className="h-5 w-5 shrink-0 text-[#edeed1]" />,
+              icon: <Compass className="h-5 w-5 shrink-0 text-neutral-200" />,
               onClick: () => {
-                window.dispatchEvent(new CustomEvent('open-ai-assistant'));
+                window.dispatchEvent(new CustomEvent('open-guided-tour'));
               },
             }}
           />
