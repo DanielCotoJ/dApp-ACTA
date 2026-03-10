@@ -4,6 +4,16 @@ import { useNetwork } from '@/providers/network.provider';
 import { useState } from 'react';
 import { NetworkSwitchModal } from '@/components/ui/network-switch-modal';
 import { Sparkles } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+// Rendered client-only: depends on localStorage (walletAddress) which is unavailable on the server.
+const NotificationBell = dynamic(
+  () =>
+    import('@/components/modules/notifications/ui/NotificationBell').then((m) => ({
+      default: m.NotificationBell,
+    })),
+  { ssr: false }
+);
 
 export function HeaderHome() {
   const { network, setNetwork } = useNetwork();
@@ -14,6 +24,7 @@ export function HeaderHome() {
         <div className="flex items-center gap-3" />
 
         <div className="flex items-center gap-4">
+          <NotificationBell />
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('open-ai-assistant'))}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#edeed1]/10 hover:bg-[#edeed1]/20 border border-[#edeed1]/20 text-zinc-400 hover:text-[#edeed1] transition-colors text-sm"
