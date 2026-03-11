@@ -1,7 +1,7 @@
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Sidebar, SidebarBody, SidebarLink } from '@/components/ui/aceternity-sidebar';
-import { Home, User, ShieldCheck, FilePlus, Lock, KeyRound, Compass, Bell } from 'lucide-react';
+import { User, ShieldCheck, FilePlus, Lock, KeyRound, Compass, Bell } from 'lucide-react';
 
 export function AppSidebar() {
   const router = useRouter();
@@ -19,11 +19,6 @@ export function AppSidebar() {
           priority
         />
       ),
-    },
-    {
-      label: 'Home',
-      href: '/dashboard',
-      icon: <Home className="h-5 w-5 shrink-0 text-neutral-200" />,
     },
     {
       label: 'API Keys',
