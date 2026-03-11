@@ -10,6 +10,7 @@ import { useWalletContext } from '@/providers/wallet.provider';
 import { useNetwork } from '@/providers/network.provider';
 import MobileBottomNav from '@/components/ui/mobile-bottom-nav';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { NotificationsRealtimeEffect } from '@/components/modules/notifications/ui/NotificationsRealtimeEffect';
 
 export default function DashboardLayoutClient({
   children,
@@ -39,6 +40,7 @@ export default function DashboardLayoutClient({
     <SidebarProvider>
       {!isMobile && <AppSidebar />}
       <SidebarInset>
+        {pathname?.startsWith('/dashboard') && <NotificationsRealtimeEffect />}
         <SettingsOverlayHost />
         <GuidedTour
           open={guidedTourOpen}

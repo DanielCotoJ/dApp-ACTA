@@ -3,6 +3,7 @@ import { NetworkToggle } from '@/components/ui/network-toggle';
 import { useNetwork } from '@/providers/network.provider';
 import { useState } from 'react';
 import { NetworkSwitchModal } from '@/components/ui/network-switch-modal';
+import { NotificationBell } from '@/components/modules/notifications/ui/NotificationBell';
 
 export function HeaderHome() {
   const { network, setNetwork } = useNetwork();
@@ -13,6 +14,7 @@ export function HeaderHome() {
         <div className="flex items-center gap-3" />
 
         <div className="flex items-center gap-4">
+          <NotificationBell />
           <NetworkToggle
             checked={network === 'testnet'}
             onCheckedChange={(checked) => (checked ? setNetwork('testnet') : setOpenConfirm(true))}
