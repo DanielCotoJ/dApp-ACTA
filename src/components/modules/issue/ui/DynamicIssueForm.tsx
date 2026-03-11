@@ -87,20 +87,10 @@ export default function DynamicIssueForm({
             <h3 className="text-xl font-semibold text-white mb-2">
               {template ? `Create credential ${template.title.toLowerCase()}` : 'Form'}
             </h3>
-            {template?.id === 'escrow' && (
+            {template?.iconSrc && (
               <Image
-                src="/tw.png"
-                alt="Escrow"
-                width={120}
-                height={120}
-                className="absolute top-4 right-4 w-24 h-24 object-contain"
-                priority={false}
-              />
-            )}
-            {template?.id === 'contributions' && (
-              <Image
-                src="/gf.png"
-                alt="Contributions"
+                src={template.iconSrc}
+                alt={template.title}
                 width={120}
                 height={120}
                 className="absolute top-4 right-4 w-24 h-24 object-contain"
