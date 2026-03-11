@@ -34,7 +34,9 @@ export function SidebarBody({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <div className={cn('flex h-full min-h-0 flex-col items-center', className)}>{children}</div>;
+  return (
+    <div className={cn('flex h-full min-h-0 flex-col items-center', className)}>{children}</div>
+  );
 }
 
 export function SidebarLink({
