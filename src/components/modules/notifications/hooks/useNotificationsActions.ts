@@ -25,8 +25,7 @@ export function useNotificationsActions() {
       return resp.json().catch(() => ({}));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'list'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'unreadCount'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
 

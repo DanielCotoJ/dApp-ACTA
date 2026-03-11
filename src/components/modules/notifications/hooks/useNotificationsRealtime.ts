@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useWalletContext } from '@/providers/wallet.provider';
 import { useActaApiKey } from '@/components/modules/vault/hooks/use-acta-api-key';
 import { actaFetchJson } from '@/lib/actaApi';
@@ -35,16 +35,28 @@ export function useNotificationsRealtime() {
   const { walletAddress } = useWalletContext();
   const { network, apiKey } = useActaApiKey();
   const { showNotificationToast } = useNotificationToast();
+  const queryClient = useQueryClient();
   const seenIdsRef = useRef<Set<string>>(new Set());
   const hasInitializedRef = useRef(false);
+  const identityRef = useRef<string>('');
 
   const enabled =
     !!(walletAddress && apiKey?.trim()) &&
     typeof pathname === 'string' &&
     pathname.startsWith('/dashboard');
 
+  const identity = `${walletAddress ?? ''}::${network}`;
+
+  useEffect(() => {
+    if (identityRef.current !== identity) {
+      seenIdsRef.current = new Set();
+      hasInitializedRef.current = false;
+      identityRef.current = identity;
+    }
+  }, [identity]);
+
   const query = useQuery<Notification[]>({
-    queryKey: ['notifications', 'realtime', walletAddress, network],
+    queryKey: ['notifications', 'realtime', walletAddress, network, apiKey],
     queryFn: async () => {
       if (!walletAddress || !apiKey?.trim()) return [];
       const path = buildListPath(walletAddress, network, 20);
@@ -63,15 +75,26 @@ export function useNotificationsRealtime() {
 
   useEffect(() => {
     if (!query.data || !enabled) return;
+    if (identityRef.current !== identity) return;
+
     const seen = seenIdsRef.current;
     const initialized = hasInitializedRef.current;
+    let hasNew = false;
+
     for (const notification of query.data) {
       if (seen.has(notification.id)) continue;
       seen.add(notification.id);
       if (initialized) {
+        hasNew = true;
         showNotificationToast(notification);
       }
     }
+
     hasInitializedRef.current = true;
-  }, [query.data, enabled, showNotificationToast]);
+
+    if (hasNew) {
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unreadCount'] });
+    }
+  }, [query.data, enabled, identity, showNotificationToast, queryClient]);
 }

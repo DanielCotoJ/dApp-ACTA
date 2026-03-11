@@ -6,7 +6,6 @@ import { useActaApiKey } from '@/components/modules/vault/hooks/use-acta-api-key
 import { actaFetchJson } from '@/lib/actaApi';
 import type { Notification } from '../types';
 
-/** The API may return a bare array or a wrapped object like { data: [...], count: N }. */
 function extractNotifications(raw: unknown): Notification[] {
   if (Array.isArray(raw)) return raw as Notification[];
   if (raw && typeof raw === 'object') {
@@ -54,6 +53,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
       'list',
       walletAddress,
       network,
+      apiKey,
       options.unreadOnly,
       options.limit,
       options.offset,
@@ -70,11 +70,11 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
       return extractNotifications(raw);
     },
     enabled,
-    staleTime: 30_000,
+    staleTime: 15_000,
   });
 
   const unreadCountQuery = useQuery<{ count: number }>({
-    queryKey: ['notifications', 'unreadCount', walletAddress, network],
+    queryKey: ['notifications', 'unreadCount', walletAddress, network, apiKey],
     queryFn: async () => {
       if (!walletAddress || !apiKey?.trim()) return { count: 0 };
       const path = buildUnreadCountPath(walletAddress, network);
@@ -86,7 +86,8 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
       });
     },
     enabled,
-    staleTime: 30_000,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
   });
 
   const notifications = listQuery.data ?? [];

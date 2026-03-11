@@ -17,7 +17,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 z-40 hidden md:flex h-screen w-16 flex-col items-center border-r border-neutral-800 bg-neutral-900',
+        'fixed left-0 top-0 z-40 hidden md:flex h-screen w-16 flex-col items-center border-r border-neutral-800 bg-neutral-900 py-4',
         animate ? 'transition-all duration-300 ease-out' : '',
         className
       )}
@@ -34,7 +34,7 @@ export function SidebarBody({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <div className={cn('flex flex-1 flex-col items-center gap-5', className)}>{children}</div>;
+  return <div className={cn('flex h-full min-h-0 flex-col items-center', className)}>{children}</div>;
 }
 
 export function SidebarLink({
@@ -45,7 +45,7 @@ export function SidebarLink({
   const pill = (
     <div
       className={cn(
-        'size-12 rounded-xl bg-neutral-900/60 hover:bg-neutral-800 text-white grid place-items-center mb-2'
+        'size-11 rounded-xl bg-neutral-900/60 hover:bg-neutral-800 text-white grid place-items-center'
       )}
     >
       {link.icon}
