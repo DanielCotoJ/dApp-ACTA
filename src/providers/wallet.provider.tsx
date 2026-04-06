@@ -6,6 +6,7 @@ import {
   WalletNetwork,
   FREIGHTER_ID,
   FreighterModule,
+  AlbedoModule,
 } from '@creit.tech/stellar-wallets-kit';
 import {
   WalletConnectModule,
@@ -48,6 +49,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         selectedWalletId: FREIGHTER_ID,
         modules: [
           new FreighterModule(),
+          new AlbedoModule(),
           new WalletConnectModule({
             url: 'https://dapp.acta.build',
             projectId: '3a91e3876dc1b53df126947b152c4e16',
