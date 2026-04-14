@@ -1,7 +1,6 @@
 'use client';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/layouts/sidebar/Sidebar';
-import { HeaderHome } from '@/layouts/header/Header';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import GuidedTour from '@/components/modules/dashboard/ui/GuidedTour';
@@ -50,7 +49,6 @@ export default function DashboardLayoutClient({
           }}
         />
         <div className="pl-0 md:pl-64">
-          {pathname?.startsWith('/dashboard') && <HeaderHome />}
           <div className="p-4 md:p-6 pb-20 md:pb-6">
             <div className="min-w-0">{children}</div>
           </div>
