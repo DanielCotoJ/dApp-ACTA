@@ -7,11 +7,7 @@ export function useQuickStart() {
 
   function onStepClick(step: string) {
     if (step === '01') {
-      try {
-        window.dispatchEvent(new CustomEvent('open-settings'));
-      } catch {
-        router.push('/settings');
-      }
+      router.push('/dashboard/settings');
       return;
     }
     if (step === '02') {
