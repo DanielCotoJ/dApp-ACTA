@@ -42,7 +42,7 @@ export default function IssueBuilder() {
       ) : (
         <>
           <TemplateSelector
-            templates={templates}
+            templates={templates.filter((t) => t.id !== 'impacta-certificate')}
             selectedId={state.template?.id || null}
             onSelect={selectTemplate}
             onCreateCustom={() => setShowBuilder(true)}
