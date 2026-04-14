@@ -70,7 +70,9 @@ function NavLink({ item, isActive }: { item: NavLinkItem; isActive: boolean }) {
           : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800'
       )}
     >
-      <span className={cn('shrink-0', isActive ? 'text-neutral-900' : 'text-neutral-400')}>{item.icon}</span>
+      <span className={cn('shrink-0', isActive ? 'text-neutral-900' : 'text-neutral-400')}>
+        {item.icon}
+      </span>
       {item.label}
     </Link>
   );
@@ -130,8 +132,12 @@ function SidebarWalletCard() {
     return (
       <div className="mx-4 mb-4 rounded-2xl border border-neutral-800 bg-neutral-900/90 p-4">
         <p className="text-xs font-medium text-neutral-500">Wallet</p>
-        <p className="mt-1 truncate text-sm font-semibold text-white">{walletName ?? 'Connected'}</p>
-        <p className="mt-0.5 truncate font-mono text-xs text-neutral-400">{shortAddr(walletAddress)}</p>
+        <p className="mt-1 truncate text-sm font-semibold text-white">
+          {walletName ?? 'Connected'}
+        </p>
+        <p className="mt-0.5 truncate font-mono text-xs text-neutral-400">
+          {shortAddr(walletAddress)}
+        </p>
         <button
           type="button"
           onClick={handleDisconnect}
