@@ -51,7 +51,7 @@ export default function DashboardLayoutClient({
             } catch {}
           }}
         />
-        <div className="md:pl-16 pl-0">
+        <div className="pl-0 md:pl-64">
           {pathname?.startsWith('/dashboard') && <HeaderHome />}
           <div className="p-4 md:p-6 pb-20 md:pb-6">
             <div className="min-w-0">{children}</div>
