@@ -3,7 +3,22 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Shield, Search, Key, Lock, X, Share2, Trash2, Eye, Loader2, Copy } from 'lucide-react';
+import {
+  Shield,
+  Search,
+  Key,
+  Lock,
+  X,
+  Share2,
+  Trash2,
+  Eye,
+  Loader2,
+  Copy,
+  Plus,
+  Wallet as WalletIcon,
+  ShieldCheck,
+  CircleAlert,
+} from 'lucide-react';
 import { useVaultDashboard } from '@/components/modules/vault/hooks/useVaultDashboard';
 import { useVaultCards } from '@/components/modules/vault/hooks/useVaultCards';
 import ShareCredentialModal from '@/components/modules/credentials/ui/ShareCredentialModal';
@@ -134,22 +149,20 @@ export default function VaultPage() {
   };
 
   if (!hasMounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#edeed1] border-r-transparent mb-4" />
-          <p className="text-white/70">Checking vault...</p>
-          <p className="text-sm text-white/50 mt-1">Detecting if your wallet has a vault</p>
-        </div>
-      </div>
-    );
+    return <VaultStatusScreen title="Checking vault…" subtitle="Detecting if your wallet has a vault" />;
   }
 
   if (!walletAddress) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center text-white/70">
-          <p className="text-lg">Connect your wallet to view your vault</p>
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <div className="max-w-md rounded-2xl border border-[#edeed1]/20 bg-zinc-900/60 p-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#edeed1]/10">
+            <WalletIcon className="h-6 w-6 text-[#edeed1]" />
+          </div>
+          <h2 className="text-xl font-semibold text-white">Wallet not connected</h2>
+          <p className="mt-2 text-sm text-white/60">
+            Connect your Stellar wallet to view and manage your credential vault.
+          </p>
         </div>
       </div>
     );
@@ -158,35 +171,47 @@ export default function VaultPage() {
   if (vaultExists === false) {
     if (showCreatingLoader) {
       return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#edeed1] border-r-transparent mb-4" />
-            <p className="text-white/70">Creating vault...</p>
-            <p className="text-sm text-white/50 mt-1">Please sign the transaction in your wallet</p>
-          </div>
-        </div>
+        <VaultStatusScreen
+          title="Creating vault…"
+          subtitle="Please sign the transaction in your wallet"
+        />
       );
     }
     return (
-      <div className="min-h-screen">
-        <div className="p-8">
-          <div className="mb-12">
-            <div className="flex items-center justify-between mb-2">
-              <h1 className="text-5xl font-bold tracking-tight text-white">Vault</h1>
-            </div>
-            <p className="text-white/50 text-lg">
-              Create your vault to store and view your credentials
+      <div className="min-h-[60vh]">
+        <div className="border-b border-[#edeed1]/20 backdrop-blur-xl">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
+            <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">Vault</h1>
+            <p className="text-sm sm:text-base text-white/50 mt-1">
+              Your personal on-chain storage for credentials
+            </p>
+          </div>
+        </div>
+
+        <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 px-4 sm:px-6 py-10 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#edeed1]/10">
+            <Shield className="h-8 w-8 text-[#edeed1]" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-semibold text-white">Create your vault</h2>
+            <p className="mt-2 text-sm text-white/60">
+              A vault is where all credentials issued to your wallet will be stored securely on
+              Stellar. You only need to create it once.
             </p>
           </div>
 
-          <div className="flex items-center justify-center">
-            <Button
-              onClick={handleCreateVault}
-              disabled={false}
-              className="w-full md:w-1/2 h-12 bg-white hover:bg-white/90 text-black font-semibold shadow-lg shadow-white/10 hover:shadow-xl hover:shadow-white/20 transition-all duration-300 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Create Vault
-            </Button>
+          <Button
+            onClick={handleCreateVault}
+            className="h-12 w-full max-w-sm rounded-xl bg-white font-semibold text-black shadow-lg shadow-white/10 transition-all duration-300 hover:bg-white/90 hover:shadow-xl hover:shadow-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Create vault
+          </Button>
+
+          <div className="grid w-full max-w-xl grid-cols-1 gap-3 sm:grid-cols-3">
+            <FeatureChip icon={Shield} label="On-chain security" />
+            <FeatureChip icon={Lock} label="Wallet-bound access" />
+            <FeatureChip icon={Key} label="One-time setup" />
           </div>
         </div>
       </div>
@@ -194,84 +219,52 @@ export default function VaultPage() {
   }
 
   if (vaultExists !== true) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#edeed1] border-r-transparent mb-4" />
-          <p className="text-white/70">Checking vault...</p>
-          <p className="text-sm text-white/50 mt-1">Detecting if your wallet has a vault</p>
-        </div>
-      </div>
-    );
+    return <VaultStatusScreen title="Checking vault…" subtitle="Detecting if your wallet has a vault" />;
   }
 
   return (
     <div className="min-h-screen">
       <div>
-        <div className="border-b border-white/10 backdrop-blur-xl">
+        <div className="border-b border-[#edeed1]/20 backdrop-blur-xl">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div>
-                  <h1 className="text-4xl font-bold text-white tracking-tight">Vault</h1>
-                  <p className="text-base text-white/50 mt-1">Manage your credentials securely</p>
-                </div>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">Vault</h1>
+                <p className="text-sm sm:text-base text-white/50 mt-1">
+                  Manage the credentials stored in your on-chain vault
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-2 self-start rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Vault active
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search credentials..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="pl-10 bg-card border-border"
-            />
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <StatCard icon={Key} label="Total credentials" value={String(actaById.size)} />
+            <StatCard icon={Shield} label="Security" value="High" subtext="Wallet-bound access" />
+            <StatCard icon={Lock} label="Encryption" value="AES-256" subtext="On-chain storage" />
           </div>
-        </div>
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card className="p-6 bg-card border-[#edeed1]/30">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-[#edeed1]/10">
-                <Key className="w-5 h-5 text-[#edeed1]" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total credentials</p>
-                <p className="text-2xl font-bold text-white">{actaById.size}</p>
-              </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-lg sm:text-xl font-semibold text-white">Saved credentials</h2>
+            <div className="relative w-full sm:max-w-sm">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+              <Input
+                type="text"
+                placeholder="Search by name, category, wallet…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="pl-10 border-zinc-800 bg-zinc-950/60 text-white placeholder:text-zinc-500"
+              />
             </div>
-          </Card>
-          <Card className="p-6 bg-card border-[#edeed1]/30">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-[#edeed1]/10">
-                <Shield className="w-5 h-5 text-[#edeed1]" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Security</p>
-                <p className="text-2xl font-bold text-white">High</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-6 bg-card border-[#edeed1]/30">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-[#edeed1]/10">
-                <Lock className="w-5 h-5 text-[#edeed1]" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Encryption</p>
-                <p className="text-2xl font-bold text-white">AES-256</p>
-              </div>
-            </div>
-          </Card>
+          </div>
         </div>
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <h2 className="text-xl font-semibold mb-4">Saved credentials</h2>
           {dashboardStatus === 'pending' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[0, 1, 2].map((i) => (
@@ -285,14 +278,23 @@ export default function VaultPage() {
               ))}
             </div>
           ) : filteredCredentials.length === 0 ? (
-            <Card className="p-12 text-center bg-card border-border">
-              <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#edeed1]/20 bg-zinc-900/40 p-10 text-center">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#edeed1]/10">
+                {query ? (
+                  <Search className="h-6 w-6 text-[#edeed1]" />
+                ) : (
+                  <Shield className="h-6 w-6 text-[#edeed1]" />
+                )}
+              </div>
+              <h3 className="text-base font-semibold text-white">
+                {query ? 'No credentials match your search' : 'No credentials yet'}
+              </h3>
+              <p className="mt-1 max-w-sm text-sm text-white/60">
                 {query
-                  ? 'No credentials found'
-                  : 'No saved credentials. Add your first credential.'}
+                  ? 'Try a different name, category, or wallet address.'
+                  : 'Credentials issued to your wallet will appear here automatically.'}
               </p>
-            </Card>
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredCredentials.map((credential) => (
@@ -348,83 +350,115 @@ export default function VaultPage() {
           )}
         </div>
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 border-t border-white/10 mt-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-10 pb-8 border-t border-[#edeed1]/20 mt-10">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-white">Sponsored vault</h2>
               <p className="text-sm text-white/50">
-                Create vaults on behalf of other wallets when you are a sponsor.
+                Create a vault on behalf of another wallet. Your wallet will sponsor the
+                transaction.
               </p>
+            </div>
+            <div className="inline-flex items-center gap-2 self-start rounded-full border border-[#edeed1]/30 bg-[#edeed1]/5 px-3 py-1.5 text-xs font-medium text-[#edeed1]">
+              <Sparkle />
+              Advanced
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card className="p-6 bg-card border-border space-y-4">
-              <div>
-                <p className="text-sm font-medium text-white/80">Your wallet (sponsor)</p>
-                <p className="text-xs text-white/50 mb-2">
-                  This wallet will sign sponsored vault transactions.
-                </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-[#edeed1]/20 bg-zinc-900/50 p-5 backdrop-blur-sm">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#edeed1]/10">
+                  <WalletIcon className="h-5 w-5 text-[#edeed1]" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">Sponsor wallet</p>
+                  <p className="text-xs text-white/50">Signs the sponsored transaction</p>
+                </div>
               </div>
-              <div className="flex items-center gap-3 bg-black/40 rounded-lg p-4 border border-white/10">
-                <code className="text-white font-mono text-xs flex-1 break-all">
+              <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 p-3">
+                <code className="flex-1 break-all font-mono text-xs text-white">
                   {walletAddress}
                 </code>
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-8 w-8 p-0 hover:bg-white/10"
+                  className="h-8 w-8 shrink-0 p-0 text-white/60 hover:bg-white/10 hover:text-white"
                   onClick={() => copyToClipboard(walletAddress, 'wallet')}
+                  aria-label="Copy wallet address"
                 >
-                  <Copy className="h-4 w-4 text-white/60" />
+                  <Copy className="h-4 w-4" />
                 </Button>
               </div>
-            </Card>
+            </div>
 
-            <Card className="p-6 bg-card border-border space-y-4">
-              <div>
-                <p className="text-sm font-medium text-white/80">Vault owner</p>
-                <p className="text-xs text-white/50 mb-2">
-                  Enter the wallet address to create a vault for.
-                </p>
+            <div className="rounded-2xl border border-[#edeed1]/20 bg-zinc-900/50 p-5 backdrop-blur-sm">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#edeed1]/10">
+                  <Shield className="h-5 w-5 text-[#edeed1]" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">Vault owner</p>
+                  <p className="text-xs text-white/50">Wallet that will own the new vault</p>
+                </div>
               </div>
 
               <div className="space-y-3">
-                <div className="space-y-1">
-                  <p className="text-xs text-white/60">Owner wallet (G...)</p>
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="sponsor-owner"
+                    className="text-xs font-medium uppercase tracking-wide text-zinc-400"
+                  >
+                    Owner wallet
+                  </label>
                   <Input
+                    id="sponsor-owner"
                     type="text"
                     placeholder="G..."
                     value={sponsorOwnerAddress}
                     onChange={(e) => handleSponsorOwnerChange(e.target.value)}
-                    className="bg-black/40 border-white/10"
+                    className="border-zinc-800 bg-zinc-950/60 text-white placeholder:text-zinc-500"
                   />
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-white/60">Owner DID</p>
-                  <div className="flex items-center gap-3 bg-black/40 rounded-lg p-3 border border-white/10">
-                    <code className="text-white font-mono text-xs flex-1 break-all">
-                      {sponsorOwnerDid || 'will be derived from wallet'}
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+                    Derived DID
+                  </p>
+                  <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 p-3">
+                    <code className="flex-1 break-all font-mono text-xs text-white/80">
+                      {sponsorOwnerDid || (
+                        <span className="text-white/40">Will be derived from the owner wallet</span>
+                      )}
                     </code>
                   </div>
                 </div>
+
+                {!sponsorOwnerAddress && (
+                  <div className="flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-950/40 p-3 text-xs text-white/60">
+                    <CircleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
+                    Paste the wallet address you want to create a vault for.
+                  </div>
+                )}
               </div>
 
               <Button
                 onClick={handleCreateSponsoredVault}
                 disabled={sponsoring || !sponsorOwnerAddress}
-                className="w-full h-10 bg-white hover:bg-white/90 text-black font-semibold rounded-xl disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+                className="mt-4 h-11 w-full rounded-xl bg-white text-sm font-semibold text-black transition-colors hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {sponsoring ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating sponsored vault...
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating sponsored vault…
                   </>
                 ) : (
-                  'Create sponsored vault'
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create sponsored vault
+                  </>
                 )}
               </Button>
-            </Card>
+            </div>
           </div>
         </div>
       </div>
@@ -668,5 +702,67 @@ export default function VaultPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  subtext,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  subtext?: string;
+}) {
+  return (
+    <Card className="rounded-2xl border border-[#edeed1]/20 bg-zinc-900/50 p-5 backdrop-blur-sm">
+      <div className="flex items-start gap-4">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#edeed1]/10">
+          <Icon className="h-5 w-5 text-[#edeed1]" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs uppercase tracking-wide text-zinc-500">{label}</p>
+          <p className="mt-1 text-2xl font-semibold text-white">{value}</p>
+          {subtext && <p className="mt-0.5 text-xs text-zinc-400">{subtext}</p>}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function VaultStatusScreen({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center px-4">
+      <div className="text-center">
+        <div className="mb-4 inline-flex h-10 w-10 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-[#edeed1]" />
+        </div>
+        <p className="text-white/80">{title}</p>
+        <p className="mt-1 text-sm text-white/50">{subtitle}</p>
+      </div>
+    </div>
+  );
+}
+
+function FeatureChip({
+  icon: Icon,
+  label,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-xl border border-[#edeed1]/15 bg-zinc-900/60 px-3 py-2.5">
+      <Icon className="h-4 w-4 text-[#edeed1]" />
+      <span className="text-xs font-medium text-white/80">{label}</span>
+    </div>
+  );
+}
+
+function Sparkle() {
+  return (
+    <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[#edeed1]" />
   );
 }

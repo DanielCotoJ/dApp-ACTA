@@ -1,11 +1,24 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Copy, Check } from 'lucide-react';
+import {
+  Copy,
+  Check,
+  KeyRound,
+  ShieldAlert,
+  Wallet as WalletIcon,
+  CircleCheck,
+  CircleAlert,
+  Loader2,
+  Eye,
+  EyeOff,
+  Sparkles,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePublicApiKey } from '@/components/modules/api-keys/hooks/usePublicApiKey';
 import { useWalletContext } from '@/providers/wallet.provider';
+import { useNetwork } from '@/providers/network.provider';
 
 function formatDate(iso: string | null) {
   if (!iso) return '-';
@@ -14,167 +27,293 @@ function formatDate(iso: string | null) {
   return d.toLocaleString();
 }
 
+function maskKey(key: string) {
+  if (key.length <= 12) return key;
+  return `${key.slice(0, 6)}${'•'.repeat(20)}${key.slice(-4)}`;
+}
+
+function shortAddr(addr: string) {
+  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+}
+
 export default function ApiKeys() {
   const { walletAddress } = useWalletContext();
+  const { network } = useNetwork();
   const { loading, error, data, requestStandardKey } = usePublicApiKey();
 
   const [name, setName] = useState('');
   const [copied, setCopied] = useState(false);
+  const [reveal, setReveal] = useState(true);
 
   const expiresLabel = useMemo(() => {
     if (!data?.api_key_record?.expires_at) return '-';
     return formatDate(data.api_key_record.expires_at);
   }, [data]);
 
+  const hasKey = Boolean(data?.api_key);
+  const disabled = loading || hasKey || !walletAddress;
+
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
-    } catch (e) {
-      void e;
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* ignore */
     }
   };
 
   return (
-    <div className="rounded-xl p-6 sm:p-8 border border-white/10 bg-black/20">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2">
-          {/* Security Warning */}
-          <div className="mb-6 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-            <div className="flex items-start gap-3">
-              <div className="text-amber-400 mt-0.5">⚠️</div>
-              <div className="flex-1 space-y-2">
-                <p className="text-sm font-semibold text-amber-200">
-                  Important Security Information
-                </p>
-                <ul className="text-xs text-amber-200/90 space-y-1 list-disc list-inside">
-                  <li>
-                    <strong>One API key per wallet:</strong> You can only create one API key per
-                    wallet address. Once created, you cannot create another one.
-                  </li>
-                  <li>
-                    <strong>Save it immediately:</strong> The API key will only be displayed once.
-                    If you leave this page, you will not be able to see it again.
-                  </li>
-                  <li>
-                    <strong>Store it securely:</strong> Keep your API key safe and never share it
-                    publicly. Treat it like a password.
-                  </li>
-                  <li>
-                    <strong>Access control:</strong> Your API key is linked to your wallet address
-                    and can only access credentials belonging to your wallet.
-                  </li>
-                </ul>
-              </div>
-            </div>
+    <div className="space-y-6">
+      {/* Security notice */}
+      <section className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15">
+            <ShieldAlert className="h-5 w-5 text-amber-300" />
           </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-semibold text-amber-100">Security information</h2>
+            <p className="mt-0.5 text-xs text-amber-200/80">
+              Read this carefully before generating your API key.
+            </p>
+            <ul className="mt-3 grid grid-cols-1 gap-2 text-xs text-amber-100/90 sm:grid-cols-2">
+              <li className="flex items-start gap-2">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300" />
+                <span>
+                  <span className="font-semibold">One key per wallet</span> — once created, it cannot
+                  be regenerated.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300" />
+                <span>
+                  <span className="font-semibold">Shown only once</span> — copy and store it before
+                  leaving this page.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300" />
+                <span>
+                  <span className="font-semibold">Treat it like a password</span> — never share or
+                  commit it to source control.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300" />
+                <span>
+                  <span className="font-semibold">Scoped access</span> — it only unlocks resources
+                  owned by your connected wallet.
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
 
-          <label className="block text-sm text-white/70 mb-2">Name (optional)</label>
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. My ACTA API Key"
-            className="bg-black/30 border-white/15 text-white placeholder:text-white/40"
-          />
-          <p className="mt-2 text-xs text-white/50">
-            You will see the API key only once. Save it securely before leaving this page.
-          </p>
-
-          {error && (
-            <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200/90">
-              {error}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
+        {/* Request form */}
+        <section className="rounded-2xl border border-[#edeed1]/20 bg-zinc-900/50 p-5 backdrop-blur-sm sm:p-6">
+          <header className="mb-5 flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#edeed1]/10">
+              <Sparkles className="h-5 w-5 text-[#edeed1]" />
             </div>
-          )}
-
-          {data?.api_key && (
-            <div className="mt-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-200/90">
-              <p className="font-semibold mb-1">✅ API Key Created Successfully!</p>
-              <p className="text-xs">
-                Make sure to copy and save your API key now. You won't be able to see it again after
-                leaving this page.
+            <div>
+              <h2 className="text-lg font-semibold text-white">Create API key</h2>
+              <p className="text-sm text-zinc-400">
+                Generate a key scoped to your connected wallet on{' '}
+                <span className="font-medium text-zinc-200">
+                  {network === 'mainnet' ? 'Mainnet' : 'Testnet'}
+                </span>
               </p>
             </div>
-          )}
+          </header>
 
-          {!walletAddress && (
-            <div className="mt-4 rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-200/90">
-              <p className="font-semibold mb-1">🔐 Wallet Required</p>
-              <p className="text-xs">
-                Please connect your wallet first to create an API key. Your API key will be linked
-                to your wallet address for security.
+          <div className="space-y-5">
+            <div>
+              <label
+                htmlFor="api-key-name"
+                className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400"
+              >
+                Name (optional)
+              </label>
+              <Input
+                id="api-key-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Production integration"
+                className="border-zinc-800 bg-zinc-950/60 text-white placeholder:text-zinc-500"
+                maxLength={64}
+              />
+              <p className="mt-1.5 text-xs text-zinc-500">
+                A friendly label to identify this key. This is the only field you can customise.
               </p>
             </div>
-          )}
 
-          <div className="mt-4">
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-4">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
+                Requesting wallet
+              </p>
+              {walletAddress ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#edeed1]/10">
+                    <WalletIcon className="h-4 w-4 text-[#edeed1]" />
+                  </div>
+                  <code className="min-w-0 flex-1 break-all font-mono text-sm text-zinc-200">
+                    {walletAddress}
+                  </code>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 text-sm text-zinc-400">
+                  <CircleAlert className="h-4 w-4 text-amber-400" />
+                  Connect your wallet to continue.
+                </div>
+              )}
+            </div>
+
+            {error && (
+              <div className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4">
+                <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-red-300" />
+                <div>
+                  <p className="text-sm font-semibold text-red-200">Request failed</p>
+                  <p className="mt-0.5 break-words text-xs text-red-200/80">{error}</p>
+                </div>
+              </div>
+            )}
+
+            {hasKey && (
+              <div className="flex items-start gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+                <CircleCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-300" />
+                <div>
+                  <p className="text-sm font-semibold text-emerald-200">API key created</p>
+                  <p className="mt-0.5 text-xs text-emerald-200/80">
+                    Copy your key now — it will not be shown again.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <Button
               type="button"
-              className="h-11 bg-white hover:bg-white/90 text-black font-medium rounded-lg"
-              disabled={loading || !!data?.api_key || !walletAddress}
+              disabled={disabled}
+              className="h-11 w-full rounded-xl bg-white text-sm font-semibold text-black hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-6"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (!loading && !data?.api_key && walletAddress) {
+                if (!disabled) {
                   requestStandardKey({ name: name.trim() || undefined });
                 }
               }}
             >
-              {loading
-                ? 'Creating…'
-                : data?.api_key
-                  ? 'API Key Already Created'
-                  : !walletAddress
-                    ? 'Connect Wallet First'
-                    : 'Request API Key'}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating key…
+                </>
+              ) : hasKey ? (
+                'Key already created'
+              ) : !walletAddress ? (
+                'Connect wallet to continue'
+              ) : (
+                <>
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  Request API key
+                </>
+              )}
             </Button>
           </div>
-        </div>
+        </section>
 
-        <div className="rounded-xl border border-white/15 bg-black/20 p-4">
-          <div className="text-sm font-semibold text-white/90">Your API Key</div>
-          <div className="mt-3">
-            <div className="text-xs text-white/60 mb-1">
-              API Key {data?.api_key ? '(copy and save immediately)' : '(will appear here)'}
+        {/* Key preview */}
+        <section className="rounded-2xl border border-[#edeed1]/20 bg-zinc-900/50 p-5 backdrop-blur-sm sm:p-6">
+          <header className="mb-5 flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#edeed1]/10">
+              <KeyRound className="h-5 w-5 text-[#edeed1]" />
             </div>
-            <div className="rounded-lg border border-white/15 bg-black/30 p-3 font-mono text-xs text-white/90 break-all min-h-[64px]">
-              {data?.api_key ? data.api_key : '—'}
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-white">Your API key</h2>
+              <p className="text-sm text-zinc-400">
+                {hasKey ? 'Copy and save it now.' : 'It will appear here after creation.'}
+              </p>
             </div>
-            {data?.api_key && (
-              <div className="mt-2 text-xs text-amber-400/80">
-                ⚠️ This is your only chance to see this key. Save it now!
+          </header>
+
+          <div className="space-y-4">
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-4">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Key
+                </span>
+                {hasKey && (
+                  <button
+                    type="button"
+                    onClick={() => setReveal((v) => !v)}
+                    className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-zinc-400 transition-colors hover:bg-zinc-800/60 hover:text-white"
+                    aria-label={reveal ? 'Hide key' : 'Reveal key'}
+                  >
+                    {reveal ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    {reveal ? 'Hide' : 'Reveal'}
+                  </button>
+                )}
               </div>
-            )}
-            <div className="mt-3 flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1 border-white/20 text-white/90 hover:bg-white/10 bg-transparent"
-                disabled={!data?.api_key}
-                onClick={() => data?.api_key && copyToClipboard(data.api_key)}
-              >
-                {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
-                {copied ? 'Copied' : 'Copy'}
-              </Button>
+              <div className="min-h-[72px] break-all font-mono text-sm text-zinc-100">
+                {hasKey
+                  ? reveal
+                    ? data?.api_key
+                    : maskKey(data!.api_key)
+                  : <span className="text-zinc-600">No key generated yet</span>}
+              </div>
+              {hasKey && (
+                <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-300">
+                  <ShieldAlert className="h-3.5 w-3.5" />
+                  This is your only chance to copy the key.
+                </p>
+              )}
             </div>
-          </div>
 
-          <div className="mt-4 space-y-2 text-xs text-white/60">
-            <div className="flex items-center justify-between gap-3">
-              <span>Role</span>
-              <span className="text-white/90">standard</span>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span>Expires at</span>
-              <span className="text-white/90">{expiresLabel}</span>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span>ID</span>
-              <span className="text-white/90 font-mono">{data?.api_key_record?.id ?? '—'}</span>
-            </div>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!hasKey}
+              onClick={() => data?.api_key && copyToClipboard(data.api_key)}
+              className="w-full rounded-xl border-zinc-800 bg-zinc-950/60 text-zinc-200 hover:bg-zinc-800 disabled:opacity-50"
+            >
+              {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+              {copied ? 'Copied to clipboard' : 'Copy key'}
+            </Button>
+
+            <dl className="grid grid-cols-1 gap-2">
+              <MetaRow label="Role" value="standard" />
+              <MetaRow
+                label="Network"
+                value={network === 'mainnet' ? 'Mainnet' : 'Testnet'}
+              />
+              <MetaRow label="Expires" value={expiresLabel} />
+              <MetaRow
+                label="Key ID"
+                value={data?.api_key_record?.id ?? '—'}
+                mono
+              />
+              {walletAddress && (
+                <MetaRow label="Wallet" value={shortAddr(walletAddress)} mono />
+              )}
+            </dl>
           </div>
-        </div>
+        </section>
       </div>
+    </div>
+  );
+}
+
+function MetaRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-zinc-800/60 bg-zinc-950/40 px-3 py-2">
+      <dt className="text-xs uppercase tracking-wide text-zinc-500">{label}</dt>
+      <dd
+        className={`truncate text-right text-sm text-zinc-200 ${mono ? 'font-mono text-xs' : ''}`}
+        title={value}
+      >
+        {value}
+      </dd>
     </div>
   );
 }

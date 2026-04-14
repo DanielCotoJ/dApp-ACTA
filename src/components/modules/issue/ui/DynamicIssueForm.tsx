@@ -3,6 +3,18 @@
 import { useEffect, useState } from 'react';
 import type { CredentialTemplate } from '@/@types/templates';
 import Image from 'next/image';
+import {
+  User,
+  FileText,
+  KeyRound,
+  ShieldCheck,
+  Loader2,
+  CircleCheck,
+  CircleAlert,
+  Send,
+  Calendar,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { validateApiKey } from '@/lib/actaApi';
 import { useNetwork } from '@/providers/network.provider';
 import { toast } from 'sonner';
@@ -79,162 +91,286 @@ export default function DynamicIssueForm({
     }
   };
 
+  if (!template) {
+    return (
+      <section className="rounded-2xl border border-dashed border-[#edeed1]/20 bg-zinc-900/40 p-10 text-center backdrop-blur-sm">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#edeed1]/10">
+          <FileText className="h-6 w-6 text-[#edeed1]" />
+        </div>
+        <h3 className="text-base font-semibold text-white">Select a template to begin</h3>
+        <p className="mt-1 text-sm text-white/60">
+          Pick a built-in or custom template above to see its required fields here.
+        </p>
+      </section>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 backdrop-blur-sm relative">
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-white mb-2">
-              {template ? `Create credential ${template.title.toLowerCase()}` : 'Form'}
-            </h3>
-            {template?.iconSrc && (
-              <Image
-                src={template.iconSrc}
-                alt={template.title}
-                width={120}
-                height={120}
-                className="absolute top-4 right-4 w-24 h-24 object-contain"
-                priority={false}
-              />
-            )}
+    <div className="space-y-6">
+      {/* Template overview */}
+      <section className="relative overflow-hidden rounded-2xl border border-[#edeed1]/20 bg-zinc-900/50 p-5 backdrop-blur-sm sm:p-6">
+        <div className="flex items-start gap-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#edeed1]/10">
+            <FileText className="h-5 w-5 text-[#edeed1]" />
           </div>
-          {template && supportsExpiration && (
-            <div className="mt-4 flex items-center gap-3">
-              <input
-                id="hasExpiration"
-                type="checkbox"
-                checked={hasExpiration}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setHasExpiration(checked);
-                  if (!checked) onSetField('expirationDate', '');
-                }}
-                aria-label="Toggle expiration"
-                className="h-4 w-4 rounded border border-zinc-700 bg-zinc-950/50 text-blue-600 focus:ring-blue-600"
-              />
-              <label htmlFor="hasExpiration" className="text-sm font-medium text-white">
-                Does the credential have an expiration date?
-              </label>
-            </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg font-semibold text-white">{template.title}</h2>
+            <p className="text-sm text-zinc-400">{template.description}</p>
+          </div>
+          {template.iconSrc && (
+            <Image
+              src={template.iconSrc}
+              alt={template.title}
+              width={96}
+              height={96}
+              className="hidden h-20 w-20 shrink-0 object-contain sm:block"
+              priority={false}
+            />
           )}
-          <p className="mt-4 text-sm text-zinc-400">
-            {template
-              ? 'Complete the fields to create a new credential'
-              : 'Select a template above.'}
-          </p>
         </div>
 
-        {!template ? (
-          <div className="py-8 text-center text-sm text-zinc-500">
-            Select a template above to begin.
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">
-                Recipient wallet address (owner)
-              </label>
-              <input
-                type="text"
-                value={owner}
-                placeholder="G... (leave empty to issue to yourself)"
-                onChange={(e) => onSetOwner(e.target.value)}
-                className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 text-white placeholder:text-zinc-500 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
-              />
-              <p className="mt-1 text-xs text-zinc-500">
-                Who receives this credential. Empty = your connected wallet. Enter another G...
-                address to send the credential to their vault.
-              </p>
-            </div>
+        {supportsExpiration && (
+          <label
+            htmlFor="hasExpiration"
+            className="mt-5 flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950/40 p-3 transition-colors hover:bg-zinc-900"
+          >
+            <input
+              id="hasExpiration"
+              type="checkbox"
+              checked={hasExpiration}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setHasExpiration(checked);
+                if (!checked) onSetField('expirationDate', '');
+              }}
+              className="h-4 w-4 rounded border border-zinc-700 bg-zinc-950 text-[#edeed1] focus:ring-[#edeed1]/50"
+            />
+            <Calendar className="h-4 w-4 text-zinc-400" />
+            <span className="text-sm text-white">This credential has an expiration date</span>
+          </label>
+        )}
+      </section>
 
-            {template.fields
-              .filter((f) => (f.key === 'expirationDate' ? hasExpiration : true))
-              .map((f) => (
-                <div key={f.key}>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    {f.label}
-                    {f.required ? ' *' : ''}
-                  </label>
-                  <input
-                    type={f.type === 'date' ? 'date' : 'text'}
-                    value={values[f.key] || ''}
-                    placeholder={f.placeholder || ''}
-                    onChange={(e) => onSetField(f.key, e.target.value)}
-                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 text-white placeholder:text-zinc-500 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
-                  />
-                </div>
-              ))}
+      {/* Recipient */}
+      <FormSection
+        icon={User}
+        title="Recipient"
+        description="The wallet that will receive this credential"
+      >
+        <div>
+          <Label htmlFor="owner-address">Recipient wallet (owner)</Label>
+          <input
+            id="owner-address"
+            type="text"
+            value={owner}
+            placeholder="G… (leave empty to issue to yourself)"
+            onChange={(e) => onSetOwner(e.target.value)}
+            className={inputClass}
+          />
+          <Helper>
+            Who receives this credential. Leave empty to issue to your connected wallet.
+          </Helper>
+        </div>
+      </FormSection>
 
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">
-                API Key {isImpacta ? '(admin) *' : '*'}{' '}
-                {keyValidated && <span className="text-green-500 text-xs">✓ Validated</span>}
-              </label>
-              <input
-                type="password"
-                value={apiKey}
-                placeholder={
-                  isImpacta
-                    ? 'Paste your admin API key here'
-                    : 'Paste your API key here (can be a custom early/custom key)'
-                }
-                onChange={(e) => handleApiKeyChange(e.target.value)}
-                disabled={validatingKey}
-                className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 text-white placeholder:text-zinc-500 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all disabled:opacity-50"
-              />
-              {keyValidationError && (
-                <p className="mt-2 text-xs text-red-400">{keyValidationError}</p>
-              )}
-              {validatingKey && <p className="mt-2 text-xs text-zinc-500">Validating API key...</p>}
-              <p className="mt-2 text-xs text-zinc-500">
-                {isImpacta
-                  ? 'An admin API key is required to verify the issuance code and issue Impacta certificates.'
-                  : 'If you have an early or custom API key provided by the team, you can use it here. Otherwise, generate one from the API Keys page.'}
-              </p>
-            </div>
-
-            {isImpacta && (
-              <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Issuance Code *{' '}
-                  {issuanceCodeValid === true && (
-                    <span className="text-green-500 text-xs">✓ Authorized</span>
-                  )}
-                  {issuanceCodeValid === false && (
-                    <span className="text-red-400 text-xs">✗ Invalid code</span>
-                  )}
-                </label>
+      {/* Credential fields */}
+      <FormSection
+        icon={FileText}
+        title="Credential fields"
+        description="Fill in the information that will be signed into the credential"
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {template.fields
+            .filter((f) => (f.key === 'expirationDate' ? hasExpiration : true))
+            .map((f) => (
+              <div key={f.key} className={f.type === 'date' ? '' : 'sm:col-span-2'}>
+                <Label htmlFor={`field-${f.key}`}>
+                  {f.label}
+                  {f.required && <span className="ml-0.5 text-[#edeed1]">*</span>}
+                </Label>
                 <input
-                  type="password"
-                  value={issuanceCode ?? ''}
-                  placeholder="Enter your authorized issuance code"
-                  onChange={(e) => onSetIssuanceCode?.(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 text-white placeholder:text-zinc-500 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+                  id={`field-${f.key}`}
+                  type={f.type === 'date' ? 'date' : 'text'}
+                  value={values[f.key] || ''}
+                  placeholder={f.placeholder || ''}
+                  onChange={(e) => onSetField(f.key, e.target.value)}
+                  className={inputClass}
                 />
-                <p className="mt-2 text-xs text-zinc-500">
-                  A valid issuance code is required to issue Impacta Bootcamp certificates. Contact
-                  an administrator if you don&apos;t have one.
-                </p>
               </div>
-            )}
+            ))}
+        </div>
+      </FormSection>
 
-            <div className="pt-4">
-              <button
-                onClick={onSubmit}
-                disabled={issuing || !template}
-                className="w-full rounded-xl bg-white text-black px-6 py-3 font-medium hover:bg-grey-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                {issuing ? 'Issuing...' : 'Issue Credential'}
-              </button>
-              {error && (
-                <div className="mt-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
-                  {error}
-                </div>
+      {/* Credentials (API key) */}
+      <FormSection
+        icon={KeyRound}
+        title="API credentials"
+        description={
+          isImpacta
+            ? 'An admin API key is required to issue Impacta certificates.'
+            : 'Use an early/custom key provided by the team, or generate one in the API Keys page.'
+        }
+      >
+        <div>
+          <div className="mb-1.5 flex items-center justify-between">
+            <Label htmlFor="api-key">
+              API key {isImpacta ? '(admin)' : ''}
+              <span className="ml-0.5 text-[#edeed1]">*</span>
+            </Label>
+            {keyValidated && (
+              <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
+                <CircleCheck className="h-3.5 w-3.5" />
+                Validated
+              </span>
+            )}
+            {validatingKey && (
+              <span className="inline-flex items-center gap-1 text-xs text-zinc-400">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Validating…
+              </span>
+            )}
+          </div>
+          <input
+            id="api-key"
+            type="password"
+            value={apiKey}
+            placeholder={
+              isImpacta ? 'Paste your admin API key' : 'Paste your API key (early/custom supported)'
+            }
+            onChange={(e) => handleApiKeyChange(e.target.value)}
+            disabled={validatingKey}
+            className={`${inputClass} disabled:opacity-50`}
+            autoComplete="off"
+          />
+          {keyValidationError && (
+            <div className="mt-2 flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-2.5 text-xs text-red-200">
+              <CircleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>{keyValidationError}</span>
+            </div>
+          )}
+        </div>
+
+        {isImpacta && (
+          <div>
+            <div className="mb-1.5 flex items-center justify-between">
+              <Label htmlFor="issuance-code">
+                Issuance code<span className="ml-0.5 text-[#edeed1]">*</span>
+              </Label>
+              {issuanceCodeValid === true && (
+                <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
+                  <CircleCheck className="h-3.5 w-3.5" />
+                  Authorized
+                </span>
+              )}
+              {issuanceCodeValid === false && (
+                <span className="inline-flex items-center gap-1 text-xs text-red-400">
+                  <CircleAlert className="h-3.5 w-3.5" />
+                  Invalid code
+                </span>
               )}
             </div>
+            <input
+              id="issuance-code"
+              type="password"
+              value={issuanceCode ?? ''}
+              placeholder="Enter your authorized issuance code"
+              onChange={(e) => onSetIssuanceCode?.(e.target.value)}
+              className={inputClass}
+              autoComplete="off"
+            />
+            <Helper>
+              A valid issuance code is required to issue Impacta Bootcamp certificates. Contact an
+              administrator if you don&apos;t have one.
+            </Helper>
           </div>
         )}
-      </div>
+      </FormSection>
+
+      {/* Submit */}
+      <section className="rounded-2xl border border-[#edeed1]/20 bg-zinc-900/50 p-5 backdrop-blur-sm sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#edeed1]/10">
+              <ShieldCheck className="h-5 w-5 text-[#edeed1]" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white">Ready to issue</p>
+              <p className="text-xs text-zinc-400">
+                The credential will be signed and stored in the recipient&apos;s vault.
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            onClick={onSubmit}
+            disabled={issuing || !template}
+            className="h-11 w-full rounded-xl bg-white text-sm font-semibold text-black hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-6"
+          >
+            {issuing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Issuing…
+              </>
+            ) : (
+              <>
+                <Send className="mr-2 h-4 w-4" />
+                Issue credential
+              </>
+            )}
+          </Button>
+        </div>
+        {error && (
+          <div className="mt-4 flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+            <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="break-words">{error}</span>
+          </div>
+        )}
+      </section>
     </div>
   );
+}
+
+const inputClass =
+  'w-full rounded-xl border border-zinc-800 bg-zinc-950/60 text-white placeholder:text-zinc-500 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#edeed1]/50 focus:border-[#edeed1]/40 transition-all';
+
+function FormSection({
+  icon: Icon,
+  title,
+  description,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-[#edeed1]/20 bg-zinc-900/50 p-5 backdrop-blur-sm sm:p-6">
+      <header className="mb-5 flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#edeed1]/10">
+          <Icon className="h-5 w-5 text-[#edeed1]" />
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold text-white">{title}</h3>
+          <p className="text-sm text-zinc-400">{description}</p>
+        </div>
+      </header>
+      <div className="space-y-4">{children}</div>
+    </section>
+  );
+}
+
+function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
+  return (
+    <label
+      htmlFor={htmlFor}
+      className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400"
+    >
+      {children}
+    </label>
+  );
+}
+
+function Helper({ children }: { children: React.ReactNode }) {
+  return <p className="mt-1.5 text-xs text-zinc-500">{children}</p>;
 }
