@@ -80,8 +80,8 @@ export default function ApiKeys() {
               <li className="flex items-start gap-2">
                 <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300" />
                 <span>
-                  <span className="font-semibold">One key per wallet</span> — once created, it cannot
-                  be regenerated.
+                  <span className="font-semibold">One key per wallet</span> — once created, it
+                  cannot be regenerated.
                 </span>
               </li>
               <li className="flex items-start gap-2">
@@ -256,11 +256,15 @@ export default function ApiKeys() {
                 )}
               </div>
               <div className="min-h-[72px] break-all font-mono text-sm text-zinc-100">
-                {hasKey
-                  ? reveal
-                    ? data?.api_key
-                    : maskKey(data!.api_key)
-                  : <span className="text-zinc-600">No key generated yet</span>}
+                {hasKey ? (
+                  reveal ? (
+                    data?.api_key
+                  ) : (
+                    maskKey(data!.api_key)
+                  )
+                ) : (
+                  <span className="text-zinc-600">No key generated yet</span>
+                )}
               </div>
               {hasKey && (
                 <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-300">
@@ -283,19 +287,10 @@ export default function ApiKeys() {
 
             <dl className="grid grid-cols-1 gap-2">
               <MetaRow label="Role" value="standard" />
-              <MetaRow
-                label="Network"
-                value={network === 'mainnet' ? 'Mainnet' : 'Testnet'}
-              />
+              <MetaRow label="Network" value={network === 'mainnet' ? 'Mainnet' : 'Testnet'} />
               <MetaRow label="Expires" value={expiresLabel} />
-              <MetaRow
-                label="Key ID"
-                value={data?.api_key_record?.id ?? '—'}
-                mono
-              />
-              {walletAddress && (
-                <MetaRow label="Wallet" value={shortAddr(walletAddress)} mono />
-              )}
+              <MetaRow label="Key ID" value={data?.api_key_record?.id ?? '—'} mono />
+              {walletAddress && <MetaRow label="Wallet" value={shortAddr(walletAddress)} mono />}
             </dl>
           </div>
         </section>

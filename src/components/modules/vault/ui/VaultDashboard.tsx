@@ -149,7 +149,9 @@ export default function VaultPage() {
   };
 
   if (!hasMounted) {
-    return <VaultStatusScreen title="Checking vault…" subtitle="Detecting if your wallet has a vault" />;
+    return (
+      <VaultStatusScreen title="Checking vault…" subtitle="Detecting if your wallet has a vault" />
+    );
   }
 
   if (!walletAddress) {
@@ -219,7 +221,9 @@ export default function VaultPage() {
   }
 
   if (vaultExists !== true) {
-    return <VaultStatusScreen title="Checking vault…" subtitle="Detecting if your wallet has a vault" />;
+    return (
+      <VaultStatusScreen title="Checking vault…" subtitle="Detecting if your wallet has a vault" />
+    );
   }
 
   return (
@@ -762,7 +766,5 @@ function FeatureChip({
 }
 
 function Sparkle() {
-  return (
-    <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[#edeed1]" />
-  );
+  return <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[#edeed1]" />;
 }
