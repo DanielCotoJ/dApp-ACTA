@@ -3,9 +3,8 @@
 import { useVaultAuthorize } from '@/components/modules/vault/hooks/use-vault-authorize';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, UserCheck, UserPlus, CircleCheck, ShieldPlus } from 'lucide-react';
 
 export function VaultAuthorize() {
   const {
@@ -38,66 +37,104 @@ export function VaultAuthorize() {
     }
   };
 
+  const addrLooksValid = /^G[A-Z2-7]{55}$/.test(addressInput.trim());
+
   return (
-    <div className="space-y-6 mt-4">
-      <div className="grid gap-6 sm:grid-cols-2">
-        <Card className="p-6 space-y-3">
-          <div>
-            <h3 className="text-lg font-semibold">Authorize Me</h3>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              Grants you permission as an authorized issuer in your vault.
+    <div className="grid gap-4 md:grid-cols-2">
+      <section className="rounded-2xl border border-[#edeed1]/20 bg-zinc-900/50 p-5 backdrop-blur-sm sm:p-6">
+        <header className="mb-5 flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#edeed1]/10">
+            <UserCheck className="h-5 w-5 text-[#edeed1]" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-base font-semibold text-white">Authorize yourself</h3>
+            <p className="text-sm text-zinc-400">
+              Grant your own wallet permission to issue credentials from this vault.
             </p>
           </div>
+        </header>
+
+        {isSelfAuthorized ? (
+          <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">
+            <CircleCheck className="h-4 w-4 shrink-0" />
+            Your wallet is already authorized as an issuer.
+          </div>
+        ) : (
           <Button
             onClick={onAuthorizeMe}
-            disabled={loadingSelf || loadingAddress || isSelfAuthorized}
+            disabled={loadingSelf || loadingAddress}
             aria-busy={loadingSelf}
-            className="w-full rounded-md"
+            className="h-11 w-full rounded-xl bg-white text-sm font-semibold text-black hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loadingSelf ? (
               <>
-                <Loader2 className="animate-spin" />
-                <span>Authorizing...</span>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Authorizing…
               </>
-            ) : isSelfAuthorized ? (
-              'Already authorized'
             ) : (
-              'Authorize Me'
+              <>
+                <UserCheck className="mr-2 h-4 w-4" />
+                Authorize my wallet
+              </>
             )}
           </Button>
-        </Card>
+        )}
+      </section>
 
-        <Card className="p-6 space-y-3">
-          <div>
-            <h3 className="text-lg font-semibold">Authorize Address</h3>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              Enter a Stellar wallet (G...) to authorize it.
+      <section className="rounded-2xl border border-[#edeed1]/20 bg-zinc-900/50 p-5 backdrop-blur-sm sm:p-6">
+        <header className="mb-5 flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#edeed1]/10">
+            <ShieldPlus className="h-5 w-5 text-[#edeed1]" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-base font-semibold text-white">Authorize another wallet</h3>
+            <p className="text-sm text-zinc-400">
+              Let a trusted Stellar wallet issue credentials on behalf of this vault.
             </p>
           </div>
-          <div className="flex w-full gap-2 items-center">
+        </header>
+
+        <div className="space-y-3">
+          <div>
+            <label
+              htmlFor="auth-address"
+              className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400"
+            >
+              Stellar address
+            </label>
             <Input
-              placeholder="Address to authorize (G...)"
+              id="auth-address"
+              placeholder="G…"
               value={addressInput}
               onChange={(e) => setAddressInput(e.target.value)}
-              className="flex-1 min-w-0"
+              className="border-zinc-800 bg-zinc-950/60 text-white placeholder:text-zinc-500"
             />
-            <Button
-              onClick={onAuthorizeAddress}
-              disabled={loadingSelf || loadingAddress}
-              className="rounded-md"
-            >
-              {loadingAddress ? (
-                <>
-                  <Loader2 className="animate-spin" />
-                  <span>Authorizing...</span>
-                </>
-              ) : (
-                'Authorize'
-              )}
-            </Button>
+            {addressInput && !addrLooksValid && (
+              <p className="mt-1.5 text-xs text-amber-300">
+                That doesn&apos;t look like a Stellar public key (G…).
+              </p>
+            )}
           </div>
-        </Card>
-      </div>
+
+          <Button
+            onClick={onAuthorizeAddress}
+            disabled={loadingSelf || loadingAddress || !addressInput.trim()}
+            className="h-11 w-full rounded-xl bg-white text-sm font-semibold text-black hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loadingAddress ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Authorizing…
+              </>
+            ) : (
+              <>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Authorize address
+              </>
+            )}
+          </Button>
+        </div>
+      </section>
     </div>
   );
 }

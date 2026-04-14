@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CredentialTemplate } from '@/@types/templates';
+import { LayoutTemplate, Plus, Trash2, ChevronDown } from 'lucide-react';
 
 export default function TemplateSelector({
   templates,
@@ -57,35 +58,41 @@ export default function TemplateSelector({
   }, []);
 
   return (
-    <div className="space-y-3">
-      <label className="mt-4 block text-sm font-medium text-white">Select Template</label>
+    <section
+      className={`relative rounded-2xl border border-[#edeed1]/20 bg-zinc-900/50 p-5 backdrop-blur-sm sm:p-6 ${open ? 'z-50' : ''}`}
+    >
+      <header className="mb-5 flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#edeed1]/10">
+          <LayoutTemplate className="h-5 w-5 text-[#edeed1]" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-lg font-semibold text-white">Choose a template</h2>
+          <p className="text-sm text-zinc-400">
+            Start from a built-in credential or create your own template.
+          </p>
+        </div>
+      </header>
 
-      <div className="flex gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <div ref={wrapperRef} className="relative flex-1">
           <button
             type="button"
             onClick={() => setOpen((previous) => !previous)}
             aria-haspopup="listbox"
             aria-expanded={open}
-            className="flex w-full items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-left text-white transition-all hover:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-white/20"
+            className="flex w-full items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-left text-white transition-all hover:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#edeed1]/40"
           >
-            <span className={selectedTemplate ? 'text-white' : 'text-zinc-500'}>
-              {selectedTemplate ? selectedTemplate.title : 'Choose a template...'}
+            <span className="min-w-0 flex-1 truncate text-sm">
+              {selectedTemplate ? (
+                <span className="text-white">{selectedTemplate.title}</span>
+              ) : (
+                <span className="text-zinc-500">Choose a template…</span>
+              )}
             </span>
-            <svg
-              className={`h-4 w-4 text-zinc-400 transition-transform ${open ? 'rotate-180' : ''}`}
-              viewBox="0 0 20 20"
-              fill="none"
+            <ChevronDown
+              className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform ${open ? 'rotate-180' : ''}`}
               aria-hidden="true"
-            >
-              <path
-                d="M5 7.5L10 12.5L15 7.5"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            />
           </button>
 
           {open && (
@@ -155,15 +162,16 @@ export default function TemplateSelector({
           <button
             type="button"
             onClick={onCreateCustom}
-            className="shrink-0 rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-white transition-colors hover:bg-zinc-700"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-[#edeed1]/30 bg-[#edeed1]/10 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#edeed1]/20"
           >
-            + Custom
+            <Plus className="h-4 w-4" />
+            Custom
           </button>
         )}
       </div>
 
       {templates.length === 0 && (
-        <p className="text-xs text-zinc-500">
+        <p className="mt-3 text-xs text-zinc-500">
           No templates available yet. Create one with{' '}
           {onCreateCustom ? <span className="text-zinc-300">+ Custom</span> : 'template builder'}.
         </p>
@@ -173,11 +181,12 @@ export default function TemplateSelector({
         <button
           type="button"
           onClick={() => onDeleteCustom(selectedId)}
-          className="text-xs text-red-400 transition-colors hover:text-red-300"
+          className="mt-3 inline-flex items-center gap-1.5 text-xs text-red-400 transition-colors hover:text-red-300"
         >
+          <Trash2 className="h-3.5 w-3.5" />
           Delete this custom template
         </button>
       )}
-    </div>
+    </section>
   );
 }
