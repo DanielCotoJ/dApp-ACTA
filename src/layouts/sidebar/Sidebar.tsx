@@ -205,16 +205,13 @@ export function AppSidebar({ className }: { className?: string }) {
             icon={<Compass className="h-5 w-5 shrink-0" />}
             onClick={() => window.dispatchEvent(new CustomEvent('open-guided-tour'))}
           />
-          <NavButton
-            label="Settings"
-            icon={<Settings className="h-5 w-5 shrink-0" />}
-            onClick={() => {
-              try {
-                window.dispatchEvent(new CustomEvent('open-settings'));
-              } catch {
-                /* overlay host handles settings */
-              }
+          <NavLink
+            item={{
+              label: 'Settings',
+              href: '/dashboard/settings',
+              icon: <Settings className="h-5 w-5 shrink-0" />,
             }}
+            isActive={matchActive('/dashboard/settings')}
           />
         </div>
       </nav>

@@ -2,7 +2,6 @@
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/layouts/sidebar/Sidebar';
 import { HeaderHome } from '@/layouts/header/Header';
-import { SettingsOverlayHost } from '@/components/modules/settings/ui/SettingsOverlayHost';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import GuidedTour from '@/components/modules/dashboard/ui/GuidedTour';
@@ -41,7 +40,6 @@ export default function DashboardLayoutClient({
       {!isMobile && <AppSidebar />}
       <SidebarInset>
         {pathname?.startsWith('/dashboard') && <NotificationsRealtimeEffect />}
-        <SettingsOverlayHost />
         <GuidedTour
           open={guidedTourOpen}
           onClose={() => {
