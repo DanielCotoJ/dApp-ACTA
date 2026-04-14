@@ -27,7 +27,11 @@ const APP_VERSION = '1.0.0';
 
 type SectionId = 'account' | 'network' | 'notifications' | 'security' | 'about';
 
-const SECTIONS: { id: SectionId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const SECTIONS: {
+  id: SectionId;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
   { id: 'account', label: 'Account', icon: UserIcon },
   { id: 'network', label: 'Network', icon: Globe },
   { id: 'notifications', label: 'Notifications', icon: Bell },
@@ -137,7 +141,8 @@ export default function SettingsView() {
 
   const explorerUrl = useMemo(() => {
     if (!walletAddress) return null;
-    const host = network === 'mainnet' ? 'stellar.expert/explorer/public' : 'stellar.expert/explorer/testnet';
+    const host =
+      network === 'mainnet' ? 'stellar.expert/explorer/public' : 'stellar.expert/explorer/testnet';
     return `https://${host}/account/${walletAddress}`;
   }, [walletAddress, network]);
 
@@ -347,7 +352,9 @@ export default function SettingsView() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-white">Manage API keys</p>
-                      <p className="text-xs text-zinc-400">Request and review your public API key</p>
+                      <p className="text-xs text-zinc-400">
+                        Request and review your public API key
+                      </p>
                     </div>
                   </div>
                   <ArrowUpRight className="h-4 w-4 text-zinc-400" />
@@ -372,12 +379,7 @@ export default function SettingsView() {
               </div>
             </SectionCard>
 
-            <SectionCard
-              id="about"
-              title="About"
-              description="Application information"
-              icon={Info}
-            >
+            <SectionCard id="about" title="About" description="Application information" icon={Info}>
               <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <InfoRow label="Application" value={APP_NAME} />
                 <InfoRow label="Version" value={APP_VERSION} />
