@@ -185,13 +185,17 @@ export function AppSidebar({ className }: { className?: string }) {
         className
       )}
     >
-      <div className="flex items-center px-6 py-6">
+      <div className="px-6 py-6">
         <Link
           href="/dashboard"
-          className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950"
+          className="inline-flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950"
           aria-label="ACTA home"
         >
-          <Image src="/logo.png" alt="" width={28} height={28} className="rounded-md" priority />
+          <Image src="/logo.png" alt="" width={34} height={34} className="rounded-md" priority />
+          <div className="leading-tight">
+            <p className="text-xl font-semibold tracking-wide text-white">ACTA</p>
+            <p className="text-[10px] text-neutral-400">Issue trust at the speed of light.</p>
+          </div>
         </Link>
       </div>
 
