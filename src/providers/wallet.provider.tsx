@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import {
   StellarWalletsKit,
   WalletNetwork,
@@ -29,16 +29,24 @@ type WalletContextType = {
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const [walletAddress, setWalletAddress] = useState<string | null>(() => {
-    return typeof window !== 'undefined' ? localStorage.getItem('walletAddress') : null;
-  });
-  const [walletName, setWalletName] = useState<string | null>(() => {
-    return typeof window !== 'undefined' ? localStorage.getItem('walletName') : null;
-  });
-  const [authMethod, setAuthMethod] = useState<'wallet' | null>(() => {
-    const addr = typeof window !== 'undefined' ? localStorage.getItem('walletAddress') : null;
-    return addr ? 'wallet' : null;
-  });
+  // Initialize to null so SSR and the first client render match; hydrate from
+  // localStorage in useEffect after mount to avoid hydration mismatches.
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [walletName, setWalletName] = useState<string | null>(null);
+  const [authMethod, setAuthMethod] = useState<'wallet' | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const storedAddr = localStorage.getItem('walletAddress');
+    const storedName = localStorage.getItem('walletName');
+    if (storedAddr) {
+      // Hydrating from external storage (localStorage); setting state here is intentional.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setWalletAddress(storedAddr);
+      setWalletName(storedName);
+      setAuthMethod('wallet');
+    }
+  }, []);
   const { network } = useNetwork();
   const walletKit = React.useMemo(() => {
     if (typeof window === 'undefined') return null;
