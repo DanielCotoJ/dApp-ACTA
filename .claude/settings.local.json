@@ -1,5 +1,25 @@
 {
   "permissions": {
-    "allow": ["Bash(npm run:*)"]
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(npm install *)",
+      "Bash(node -e \"console.log\\(require\\('zod/package.json'\\).version\\)\")",
+      "Bash(npx tsc *)",
+      "Bash(npm run lint *)",
+      "Bash(npm run build *)",
+      "Bash(npm run start *)",
+      "Bash(npm run dev *)",
+      "Bash(npm run test *)",
+      "Bash(npm run test:watch *)",
+      "Bash(npm run test:coverage *)",
+      "Bash(npm run test:ui *)",
+      "Bash(npm run test:e2e *)",
+      "Bash(npx eslint *)",
+      "Bash(npx prettier --write *)",
+      "Bash(npx tsc *)",
+      "Bash(npx tsc *)",
+      "Bash(npx build *)",
+      "Bash(npm run format *)"
+    ]
   }
 }

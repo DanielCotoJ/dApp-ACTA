@@ -5,6 +5,8 @@ import { useNetwork } from '@/providers/network.provider';
 import { useWalletContext } from '@/providers/wallet.provider';
 import type { PublicApiKeyResponse } from '@/@types/api-keys';
 import { setStoredApiKey } from '@/lib/actaApi';
+import { publicApiKeyResponseSchema } from '@/lib/schemas/api-keys';
+import { apiErrorSchema, createApiKeyPayloadSchema } from '@/lib/schemas/acta-api';
 
 export function usePublicApiKey() {
   const { network } = useNetwork();
@@ -76,7 +78,7 @@ export function usePublicApiKey() {
           );
         }
 
-        const payload = {
+        const rawPayload = {
           ...(params?.name ? { name: params.name } : {}),
           wallet_address: walletAddress,
           metadata: {
@@ -86,6 +88,13 @@ export function usePublicApiKey() {
             frontend_request_id: frontendRequestId, // Track from frontend
           },
         };
+
+        const parsedPayload = createApiKeyPayloadSchema.safeParse(rawPayload);
+        if (!parsedPayload.success) {
+          const msg = parsedPayload.error.issues[0]?.message ?? 'Invalid API key creation payload';
+          throw new Error(msg);
+        }
+        const payload = parsedPayload.data;
 
         console.log('[usePublicApiKey] Creating API key:', {
           baseUrl,
@@ -115,27 +124,18 @@ export function usePublicApiKey() {
         const json: unknown = await resp.json();
 
         if (!resp.ok) {
+          const parsedError = apiErrorSchema.safeParse(json);
           const msg =
-            typeof json === 'object' &&
-            json !== null &&
-            'message' in json &&
-            typeof (json as { message?: unknown }).message === 'string'
-              ? ((json as { message?: string }).message ?? 'Failed to create API key')
-              : 'Failed to create API key';
+            (parsedError.success && parsedError.data.message) || 'Failed to create API key';
           throw new Error(msg);
         }
 
-        if (
-          typeof json !== 'object' ||
-          json === null ||
-          !('api_key' in json) ||
-          !('api_key_record' in json) ||
-          typeof (json as { api_key?: unknown }).api_key !== 'string'
-        ) {
+        const parsedJson = publicApiKeyResponseSchema.safeParse(json);
+        if (!parsedJson.success) {
           throw new Error('Invalid response from API');
         }
 
-        const typed = json as PublicApiKeyResponse;
+        const typed: PublicApiKeyResponse = parsedJson.data;
         setData(typed);
         // Store API key for the current network to be used across the app.
         setStoredApiKey(network, typed.api_key);

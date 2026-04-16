@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { CredentialTemplate, TemplateField } from '@/@types/templates';
+import { credentialTemplateSchema } from '@/lib/schemas/templates';
 
 type DraftField = Omit<TemplateField, 'key'> & { key?: string };
 
@@ -77,12 +78,22 @@ export default function CustomTemplateBuilder({
       seen.add(f.key);
     }
 
-    onSave({
+    const draft = {
       title: title.trim(),
       description: description.trim() || `Custom template: ${title.trim()}`,
       vcType: vcType.trim(),
       fields: resolved,
-    });
+    };
+
+    // Validate shape before handing off to the parent — catches unexpected
+    // field types or malformed keys that slipped past the UI.
+    const validation = credentialTemplateSchema.omit({ id: true, iconSrc: true }).safeParse(draft);
+    if (!validation.success) {
+      setError(validation.error.issues[0]?.message ?? 'Invalid template');
+      return;
+    }
+
+    onSave(draft);
   };
 
   const inputClass =

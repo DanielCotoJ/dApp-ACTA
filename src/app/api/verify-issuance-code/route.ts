@@ -1,4 +1,8 @@
 import { NextResponse } from 'next/server';
+import {
+  verifyIssuanceCodeRequestSchema,
+  verifyIssuanceCodeResponseSchema,
+} from '@/lib/schemas/acta-api';
 
 const API_URLS: Record<string, string> = {
   mainnet: process.env.NEXT_PUBLIC_ACTA_API_BASE_URL_MAINNET || 'https://acta.build/api/mainnet',
@@ -7,20 +11,14 @@ const API_URLS: Record<string, string> = {
 
 export async function POST(req: Request) {
   try {
-    const { code, adminApiKey, network } = (await req.json()) as {
-      code?: string;
-      adminApiKey?: string;
-      network?: string;
-    };
-
-    if (!code?.trim()) {
-      return NextResponse.json({ valid: false, error: 'Issuance code is required.' });
+    const rawBody: unknown = await req.json().catch(() => ({}));
+    const parsedBody = verifyIssuanceCodeRequestSchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      const msg = parsedBody.error.issues[0]?.message ?? 'Invalid request body';
+      return NextResponse.json({ valid: false, error: msg });
     }
 
-    if (!adminApiKey?.trim()) {
-      return NextResponse.json({ valid: false, error: 'Admin API key is required.' });
-    }
-
+    const { code, adminApiKey, network } = parsedBody.data;
     const net = network === 'mainnet' ? 'mainnet' : 'testnet';
     const baseUrl = API_URLS[net].replace(/\/$/, '');
 
@@ -28,16 +26,16 @@ export async function POST(req: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-ACTA-Key': adminApiKey.trim(),
+        'X-ACTA-Key': adminApiKey,
       },
       body: JSON.stringify({
-        code: code.trim(),
+        code,
         template_id: 'impacta-certificate',
       }),
     });
 
     if (!resp.ok) {
-      const body = await resp.json().catch(() => ({}));
+      const body: unknown = await resp.json().catch(() => ({}));
       const msg =
         typeof body === 'object' && body !== null && 'error' in body
           ? String((body as Record<string, unknown>).error)
@@ -53,7 +51,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const data = (await resp.json()) as { valid?: boolean; error?: string };
+    const raw: unknown = await resp.json().catch(() => ({}));
+    const parsed = verifyIssuanceCodeResponseSchema.safeParse(raw);
+    const data = parsed.success ? parsed.data : {};
     return NextResponse.json({ valid: data.valid === true, error: data.error });
   } catch {
     return NextResponse.json(

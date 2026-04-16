@@ -28,8 +28,9 @@ export default function IssueForm() {
         expires: hasExpiration ? expires : '',
       });
       setPreview(mockCredential);
-    } catch {
-      alert('Attributes JSON is not valid');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Attributes JSON is not valid';
+      alert(msg);
     }
   };
 
