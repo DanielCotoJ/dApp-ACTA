@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Loader2, UserCheck, UserPlus, CircleCheck, ShieldPlus } from 'lucide-react';
+import { stellarAddressSchema } from '@/lib/schemas/primitives';
 
 export function VaultAuthorize() {
   const {
@@ -37,7 +38,7 @@ export function VaultAuthorize() {
     }
   };
 
-  const addrLooksValid = /^G[A-Z2-7]{55}$/.test(addressInput.trim());
+  const addrLooksValid = stellarAddressSchema.safeParse(addressInput.trim()).success;
 
   return (
     <div className="grid gap-4 md:grid-cols-2">

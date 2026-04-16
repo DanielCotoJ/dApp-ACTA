@@ -8,14 +8,15 @@ import { useWalletContext } from '@/providers/wallet.provider';
 import { useNetwork } from '@/providers/network.provider';
 import { mapContractErrorToMessage } from '@/lib/utils';
 import { actaFetchJson } from '@/lib/actaApi';
-
-type ApiConfig = {
-  rpcUrl: string;
-  networkPassphrase: string;
-  actaContractId: string;
-};
-
-type TxPrepareResponse = { xdr: string; network: string };
+import {
+  apiConfigSchema,
+  txPrepareResponseSchema,
+  txSubmitResponseSchema,
+  listVcIdsResponseSchema,
+  getVcResponseSchema,
+  verifyVcResponseSchema,
+  type ApiConfig,
+} from '@/lib/schemas/acta-api';
 
 /**
  * Returns true if the given owner address already has a vault (so sponsored vault creation can be skipped).
@@ -67,11 +68,12 @@ export async function checkVaultExistsForOwner(
 }
 
 async function fetchApiConfig(params: { network: 'testnet' | 'mainnet'; apiKey?: string }) {
-  return actaFetchJson<ApiConfig>({
+  return actaFetchJson({
     network: params.network,
     apiKey: params.apiKey,
     method: 'GET',
     path: '/config',
+    schema: apiConfigSchema,
   });
 }
 
@@ -83,24 +85,26 @@ async function submitPreparedTx(params: {
   sign: (xdr: string, opts: { networkPassphrase: string }) => Promise<string>;
   networkPassphraseOverride?: string;
 }) {
-  const prep = await actaFetchJson<TxPrepareResponse>({
+  const prep = await actaFetchJson({
     network: params.network,
     apiKey: params.apiKey,
     method: 'POST',
     path: params.preparePath,
     body: params.prepareBody,
+    schema: txPrepareResponseSchema,
   });
 
   const signedXdr = await params.sign(prep.xdr, {
     networkPassphrase: params.networkPassphraseOverride || prep.network,
   });
 
-  const submit = await actaFetchJson<{ tx_id: string }>({
+  const submit = await actaFetchJson({
     network: params.network,
     apiKey: params.apiKey,
     method: 'POST',
     path: params.preparePath,
     body: { signedXdr },
+    schema: txSubmitResponseSchema,
   });
 
   return submit;
@@ -421,12 +425,13 @@ export function useVault() {
     }
 
     try {
-      const idsResp = await actaFetchJson<{ result: string[] }>({
+      const idsResp = await actaFetchJson({
         network,
         path: '/contracts/vault/list-vc-ids',
         body: { owner: walletAddress },
+        schema: listVcIdsResponseSchema,
       });
-      const ids = Array.isArray(idsResp?.result) ? idsResp.result : [];
+      const ids = idsResp.result;
 
       // The API may return { result: [] } even when the vault doesn't exist.
       // When the list is empty, verify vault existence directly against the
@@ -448,15 +453,17 @@ export function useVault() {
       for (const id of ids) {
         try {
           const [vcResp, statusResp] = await Promise.all([
-            actaFetchJson<{ result: unknown }>({
+            actaFetchJson({
               network,
               path: '/contracts/vault/get-vc',
               body: { owner: walletAddress, vcId: id },
+              schema: getVcResponseSchema,
             }),
-            actaFetchJson<{ status: string; since?: string }>({
+            actaFetchJson({
               network,
               path: '/contracts/vault/verify-vc',
               body: { owner: walletAddress, vcId: id },
+              schema: verifyVcResponseSchema,
             }),
           ]);
 

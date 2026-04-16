@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useVault } from '@/components/modules/vault/hooks/use-vault';
+import { stellarAddressSchema } from '@/lib/schemas/primitives';
 
 export function useVaultAuthorize() {
   const { authorizeSelf, authorizeAddress, checkSelfAuthorized } = useVault();
@@ -22,11 +23,13 @@ export function useVaultAuthorize() {
   }, [authorizeSelf]);
 
   const authorizeWithInput = useCallback(async () => {
-    const addr = addressInput.trim();
-    if (!addr) throw new Error('Address required');
+    const parsed = stellarAddressSchema.safeParse(addressInput.trim());
+    if (!parsed.success) {
+      throw new Error(parsed.error.issues[0]?.message ?? 'Address required');
+    }
     setLoadingAddress(true);
     try {
-      return await authorizeAddress(addr);
+      return await authorizeAddress(parsed.data);
     } finally {
       setLoadingAddress(false);
     }

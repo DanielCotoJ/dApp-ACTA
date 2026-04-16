@@ -8,6 +8,15 @@ import { useWalletContext } from '@/providers/wallet.provider';
 import { useNetwork } from '@/providers/network.provider';
 import { mapContractErrorToMessage } from '@/lib/utils';
 import { actaFetchJson } from '@/lib/actaApi';
+import {
+  apiConfigSchema,
+  txPrepareResponseSchema,
+  txSubmitResponseSchema,
+  verifyIssuanceCodeResponseSchema,
+} from '@/lib/schemas/acta-api';
+import { stellarAddressSchema } from '@/lib/schemas/primitives';
+import { apiKeyInputSchema } from '@/lib/schemas/api-keys';
+import { attributesJsonSchema } from '@/lib/schemas/credentials';
 
 import { useVault, checkVaultExistsForOwner } from '@/components/modules/vault/hooks/use-vault';
 import { useActaApiKey } from '@/components/modules/vault/hooks/use-acta-api-key';
@@ -15,10 +24,6 @@ import { useActaApiKey } from '@/components/modules/vault/hooks/use-acta-api-key
 import type { CredentialTemplate, TemplateField } from '@/@types/templates';
 import type { IssueState } from '@/@types/issue';
 import type { MockCredential } from '@/@types/credentials';
-
-type TxPrepareResp = { xdr: string; network: string };
-
-type TxSubmitResp = { tx_id: string };
 
 export function useIssueCredential() {
   const { walletAddress, walletName, signTransaction, walletKit, setWalletInfo } =
@@ -72,8 +77,9 @@ export function useIssueCredential() {
             network,
           }),
         });
-        const data = (await res.json()) as { valid?: boolean };
-        setIssuanceCodeValid(data.valid === true);
+        const raw: unknown = await res.json();
+        const parsed = verifyIssuanceCodeResponseSchema.safeParse(raw);
+        setIssuanceCodeValid(parsed.success && parsed.data.valid === true);
       } catch {
         setIssuanceCodeValid(false);
       }
@@ -184,12 +190,13 @@ export function useIssueCredential() {
 
     const isImpactaTpl = tpl.id === 'impacta-certificate';
 
-    const trimmedApiKey = apiKey.trim();
-    if (!trimmedApiKey) {
+    const parsedApiKey = apiKeyInputSchema.safeParse(apiKey);
+    if (!parsedApiKey.success) {
       const msg = 'API key is required to issue via API.';
       setState((s) => ({ ...s, error: msg }));
       throw new Error(msg);
     }
+    const trimmedApiKey = parsedApiKey.data;
 
     if (isImpactaTpl) {
       if (!issuanceCode.trim()) {
@@ -206,7 +213,9 @@ export function useIssueCredential() {
           network,
         }),
       });
-      const codeData = (await codeRes.json()) as { valid?: boolean; error?: string };
+      const codeRaw: unknown = await codeRes.json();
+      const codeParsed = verifyIssuanceCodeResponseSchema.safeParse(codeRaw);
+      const codeData = codeParsed.success ? codeParsed.data : {};
       if (!codeData.valid) {
         const msg = codeData.error || 'Invalid issuance code.';
         setState((s) => ({ ...s, error: msg }));
@@ -236,8 +245,11 @@ export function useIssueCredential() {
     const ownerG = recipientInput || activeAddress;
 
     if (recipientInput) {
-      if (!/^G[0-9A-Za-z]{55}$/.test(recipientInput)) {
-        const msg = 'Recipient (owner) must be a valid Stellar address (G..., 56 characters).';
+      const recipientCheck = stellarAddressSchema.safeParse(recipientInput);
+      if (!recipientCheck.success) {
+        const msg =
+          recipientCheck.error.issues[0]?.message ??
+          'Recipient (owner) must be a valid Stellar address (G..., 56 characters).';
         setState((s) => ({ ...s, error: msg }));
         throw new Error(msg);
       }
@@ -270,15 +282,12 @@ export function useIssueCredential() {
       }
 
       // Read config from API once (used for vault check and issuance).
-      const cfg = await actaFetchJson<{
-        rpcUrl: string;
-        networkPassphrase: string;
-        actaContractId: string;
-      }>({
+      const cfg = await actaFetchJson({
         network,
         apiKey: trimmedApiKey,
         method: 'GET',
         path: '/config',
+        schema: apiConfigSchema,
       });
 
       // Impacta Bootcamp template: ensure recipient has a vault. Only call create_sponsored_vault if they don't have one (avoids Error(Contract, #1) AlreadyInitialized).
@@ -310,7 +319,7 @@ export function useIssueCredential() {
 
       // Prepare issuance: owner = recipient (ownerG), issuer = signer (activeAddress).
       const issuerDidLocal = `did:pkh:stellar:${network === 'mainnet' ? 'mainnet' : 'testnet'}:${activeAddress}`;
-      const prep = await actaFetchJson<TxPrepareResp>({
+      const prep = await actaFetchJson({
         network,
         apiKey: trimmedApiKey,
         path: '/contracts/vc/issue',
@@ -323,17 +332,19 @@ export function useIssueCredential() {
           sourcePublicKey: activeAddress,
           contractId: cfg.actaContractId,
         },
+        schema: txPrepareResponseSchema,
       });
 
       const signedXdr = await signTransaction(prep.xdr, {
         networkPassphrase: prep.network || cfg.networkPassphrase,
       });
 
-      const submit = await actaFetchJson<TxSubmitResp>({
+      const submit = await actaFetchJson({
         network,
         apiKey: trimmedApiKey,
         path: '/contracts/vc/issue',
         body: { signedXdr },
+        schema: txSubmitResponseSchema,
       });
 
       setState((s) => ({ ...s, issuing: false, txId: submit.tx_id }));
@@ -442,15 +453,9 @@ export function buildMockCredential(params: {
   attributesJson: string;
   expires: string;
 }): MockCredential {
-  let attrs: Record<string, unknown> = {};
-  const raw = params.attributesJson || '{}';
-  try {
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === 'object') {
-      attrs = parsed as Record<string, unknown>;
-    }
-  } catch {
-    throw new Error('Attributes JSON is not valid');
+  const parsed = attributesJsonSchema.safeParse(params.attributesJson || '{}');
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? 'Attributes JSON is not valid');
   }
 
   return {
@@ -461,7 +466,7 @@ export function buildMockCredential(params: {
     expirationDate: params.expires || undefined,
     credentialSubject: {
       id: params.subject,
-      ...attrs,
+      ...parsed.data,
     },
   };
 }

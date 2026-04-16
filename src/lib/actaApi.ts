@@ -1,5 +1,10 @@
 'use client';
 
+import type { ZodType } from 'zod';
+import { apiErrorSchema, apiConfigSchema } from './schemas/acta-api';
+import { networkSchema } from './schemas/primitives';
+import { apiKeyInputSchema } from './schemas/api-keys';
+
 /**
  * ACTA API client helpers.
  *
@@ -29,16 +34,21 @@ export function getActaApiBaseUrl(network: ActaNetwork): string {
 
 export function getStoredApiKey(network: ActaNetwork): string {
   try {
-    const v = localStorage.getItem(`${STORAGE_KEY_PREFIX}:${network}`);
-    return v ? String(v) : '';
+    const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}:${network}`);
+    if (raw == null) return '';
+    const parsed = apiKeyInputSchema.safeParse(raw);
+    return parsed.success ? parsed.data : '';
   } catch {
     return '';
   }
 }
 
 export function setStoredApiKey(network: ActaNetwork, apiKey: string): void {
+  const parsedNetwork = networkSchema.safeParse(network);
+  const parsedKey = apiKeyInputSchema.safeParse(apiKey);
+  if (!parsedNetwork.success || !parsedKey.success) return;
   try {
-    localStorage.setItem(`${STORAGE_KEY_PREFIX}:${network}`, apiKey);
+    localStorage.setItem(`${STORAGE_KEY_PREFIX}:${parsedNetwork.data}`, parsedKey.data);
   } catch {
     // ignore
   }
@@ -50,6 +60,11 @@ export async function actaFetchJson<T>(params: {
   method?: 'GET' | 'POST';
   apiKey?: string;
   body?: unknown;
+  /**
+   * Optional zod schema. When provided, the JSON response is parsed through it
+   * so callers get validated data instead of an untrusted `unknown` cast.
+   */
+  schema?: ZodType<T>;
 }): Promise<T> {
   const baseUrl = getActaApiBaseUrl(params.network);
   const url = `${baseUrl}${params.path.startsWith('/') ? '' : '/'}${params.path}`;
@@ -70,14 +85,21 @@ export async function actaFetchJson<T>(params: {
 
   const json: unknown = await resp.json().catch(() => ({}));
   if (!resp.ok) {
-    const msg =
-      typeof json === 'object' &&
-      json !== null &&
-      'message' in json &&
-      typeof (json as { message?: unknown }).message === 'string'
-        ? String((json as { message?: unknown }).message)
-        : `HTTP ${resp.status}`;
+    const parsed = apiErrorSchema.safeParse(json);
+    const msg = parsed.success && parsed.data.message ? parsed.data.message : `HTTP ${resp.status}`;
     throw new Error(msg);
+  }
+
+  if (params.schema) {
+    const result = params.schema.safeParse(json);
+    if (!result.success) {
+      throw new Error(
+        `Invalid response from ${params.path}: ${result.error.issues
+          .map((i) => `${i.path.join('.')} ${i.message}`)
+          .join('; ')}`
+      );
+    }
+    return result.data;
   }
 
   return json as T;
@@ -91,16 +113,18 @@ export async function validateApiKey(
   apiKey: string,
   network: ActaNetwork
 ): Promise<{ valid: boolean; error?: string }> {
-  if (!apiKey || !apiKey.trim()) {
-    return { valid: false, error: 'API key is required' };
+  const parsedKey = apiKeyInputSchema.safeParse(apiKey);
+  if (!parsedKey.success) {
+    return { valid: false, error: parsedKey.error.issues[0]?.message ?? 'API key is required' };
   }
 
   try {
-    await actaFetchJson<{ rpcUrl: string; networkPassphrase: string; actaContractId: string }>({
+    await actaFetchJson({
       network,
-      apiKey: apiKey.trim(),
+      apiKey: parsedKey.data,
       method: 'GET',
       path: '/config',
+      schema: apiConfigSchema,
     });
     return { valid: true };
   } catch (error) {
