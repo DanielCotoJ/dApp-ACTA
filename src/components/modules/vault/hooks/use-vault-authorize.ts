@@ -8,6 +8,7 @@ export function useVaultAuthorize() {
   const { authorizeSelf, authorizeAddress, checkSelfAuthorized } = useVault();
   const [addressInput, setAddressInput] = useState<string>('');
   const [isSelfAuthorized, setIsSelfAuthorized] = useState<boolean>(false);
+  const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
   const [loadingSelf, setLoadingSelf] = useState<boolean>(false);
   const [loadingAddress, setLoadingAddress] = useState<boolean>(false);
 
@@ -37,12 +38,15 @@ export function useVaultAuthorize() {
 
   useEffect(() => {
     let mounted = true;
+    setCheckingAuth(true);
     (async () => {
       try {
         const already = await checkSelfAuthorized();
         if (mounted) setIsSelfAuthorized(!!already);
       } catch {
         if (mounted) setIsSelfAuthorized(false);
+      } finally {
+        if (mounted) setCheckingAuth(false);
       }
     })();
     return () => {
@@ -58,5 +62,6 @@ export function useVaultAuthorize() {
     loadingSelf,
     loadingAddress,
     isSelfAuthorized,
+    checkingAuth,
   };
 }
