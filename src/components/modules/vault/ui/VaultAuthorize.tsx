@@ -16,6 +16,7 @@ export function VaultAuthorize() {
     loadingSelf,
     loadingAddress,
     isSelfAuthorized,
+    checkingAuth,
   } = useVaultAuthorize();
 
   const onAuthorizeMe = async () => {
@@ -55,7 +56,13 @@ export function VaultAuthorize() {
           </div>
         </header>
 
-        {isSelfAuthorized ? (
+        {checkingAuth ? (
+          <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-[#edeed1]/15 bg-zinc-950/40 p-5 text-center">
+            <Loader2 className="h-6 w-6 animate-spin text-[#edeed1]" />
+            <p className="text-sm text-white/80">Checking authorization…</p>
+            <p className="text-xs text-white/50">Verifying issuer permissions on-chain</p>
+          </div>
+        ) : isSelfAuthorized ? (
           <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">
             <CircleCheck className="h-4 w-4 shrink-0" />
             Your wallet is already authorized as an issuer.
