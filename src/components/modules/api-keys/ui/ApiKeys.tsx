@@ -9,11 +9,11 @@ import {
   Wallet as WalletIcon,
   CircleCheck,
   CircleAlert,
-  Loader2,
   Eye,
   EyeOff,
   Sparkles,
 } from 'lucide-react';
+import { ActaLoaderInline } from '@/components/ui/acta-loader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePublicApiKey } from '@/components/modules/api-keys/hooks/usePublicApiKey';
@@ -206,7 +206,7 @@ export default function ApiKeys() {
             >
               {loading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <ActaLoaderInline className="mr-2" />
                   Creating key…
                 </>
               ) : hasKey ? (

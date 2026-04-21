@@ -10,13 +10,13 @@
       "Bash(npm run test:watch)",
       "Bash(npm run test:coverage)",
       "Bash(npm run test:e2e)",
-
       "Bash(npm install)",
       "Bash(npm install *)",
-
       "Bash(npx tsc)",
       "Bash(npx eslint .)",
-      "Bash(npx prettier --write .)"
+      "Bash(npx prettier --write .)",
+      "Bash(xargs grep:*)",
+      "Bash(npx next:*)"
     ]
   }
 }

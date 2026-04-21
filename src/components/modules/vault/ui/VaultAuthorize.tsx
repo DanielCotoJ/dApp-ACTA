@@ -4,7 +4,8 @@ import { useVaultAuthorize } from '@/components/modules/vault/hooks/use-vault-au
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Loader2, UserCheck, UserPlus, CircleCheck, ShieldPlus } from 'lucide-react';
+import { UserCheck, UserPlus, CircleCheck, ShieldPlus } from 'lucide-react';
+import { ActaLoader, ActaLoaderInline } from '@/components/ui/acta-loader';
 import { stellarAddressSchema } from '@/lib/schemas/primitives';
 
 export function VaultAuthorize() {
@@ -58,9 +59,7 @@ export function VaultAuthorize() {
 
         {checkingAuth ? (
           <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-[#edeed1]/15 bg-zinc-950/40 p-5 text-center">
-            <Loader2 className="h-6 w-6 animate-spin text-[#edeed1]" />
-            <p className="text-sm text-white/80">Checking authorization…</p>
-            <p className="text-xs text-white/50">Verifying issuer permissions on-chain</p>
+            <ActaLoader size="md" text="Checking authorization…" subtext="Verifying issuer permissions on-chain" />
           </div>
         ) : isSelfAuthorized ? (
           <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">
@@ -76,7 +75,7 @@ export function VaultAuthorize() {
           >
             {loadingSelf ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <ActaLoaderInline className="mr-2" />
                 Authorizing…
               </>
             ) : (
@@ -131,7 +130,7 @@ export function VaultAuthorize() {
           >
             {loadingAddress ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <ActaLoaderInline className="mr-2" />
                 Authorizing…
               </>
             ) : (

@@ -8,12 +8,12 @@ import {
   FileText,
   KeyRound,
   ShieldCheck,
-  Loader2,
   CircleCheck,
   CircleAlert,
   Send,
   Calendar,
 } from 'lucide-react';
+import { ActaLoaderInline } from '@/components/ui/acta-loader';
 import { Button } from '@/components/ui/button';
 import { validateApiKey } from '@/lib/actaApi';
 import { useNetwork } from '@/providers/network.provider';
@@ -225,7 +225,7 @@ export default function DynamicIssueForm({
             )}
             {validatingKey && (
               <span className="inline-flex items-center gap-1 text-xs text-zinc-400">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <ActaLoaderInline className="h-3.5 w-3.5" />
                 Validating…
               </span>
             )}
@@ -308,7 +308,7 @@ export default function DynamicIssueForm({
           >
             {issuing ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <ActaLoaderInline className="mr-2" />
                 Issuing…
               </>
             ) : (

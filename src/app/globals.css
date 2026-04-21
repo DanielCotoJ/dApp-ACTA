@@ -377,3 +377,24 @@ html:not(.dark) *::-webkit-scrollbar-thumb {
   transform-style: preserve-3d;
   will-change: transform;
 }
+
+/* ACTA loader: 3 frames cycle with fade */
+@keyframes actaFrame {
+  0%,
+  10% {
+    opacity: 0;
+  }
+  16%,
+  33% {
+    opacity: 1;
+  }
+  40%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.acta-loader-frame {
+  opacity: 0;
+  animation: actaFrame 2.7s ease-in-out infinite;
+}

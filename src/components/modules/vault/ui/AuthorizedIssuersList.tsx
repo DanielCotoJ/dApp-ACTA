@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Trash2, Users, Copy, Check, Loader2 } from 'lucide-react';
+import { Trash2, Users, Copy, Check } from 'lucide-react';
+import { ActaLoaderInline } from '@/components/ui/acta-loader';
 import { useVaultAuthorizedList } from '@/components/modules/vault/hooks/use-vault-authorized-list';
 import { toast } from 'sonner';
 
@@ -109,7 +110,7 @@ export function AuthorizedIssuersList() {
                         aria-label="Revoke"
                       >
                         {isRevoking ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <ActaLoaderInline />
                         ) : (
                           <Trash2 className="h-4 w-4" />
                         )}
@@ -166,7 +167,7 @@ export function AuthorizedIssuersList() {
                   >
                     {isRevoking ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <ActaLoaderInline className="mr-2" />
                         Revoking…
                       </>
                     ) : (

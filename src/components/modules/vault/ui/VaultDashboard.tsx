@@ -12,13 +12,13 @@ import {
   Share2,
   Trash2,
   Eye,
-  Loader2,
   Copy,
   Plus,
   Wallet as WalletIcon,
   ShieldCheck,
   CircleAlert,
 } from 'lucide-react';
+import { ActaLoader, ActaLoaderInline } from '@/components/ui/acta-loader';
 import { useVaultDashboard } from '@/components/modules/vault/hooks/useVaultDashboard';
 import { useVaultCards } from '@/components/modules/vault/hooks/useVaultCards';
 import ShareCredentialModal from '@/components/modules/credentials/ui/ShareCredentialModal';
@@ -452,7 +452,7 @@ export default function VaultPage() {
               >
                 {sponsoring ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <ActaLoaderInline className="mr-2" />
                     Creating sponsored vault…
                   </>
                 ) : (
@@ -739,13 +739,7 @@ function StatCard({
 function VaultStatusScreen({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
-      <div className="text-center">
-        <div className="mb-4 inline-flex h-10 w-10 items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#edeed1]" />
-        </div>
-        <p className="text-white/80">{title}</p>
-        <p className="mt-1 text-sm text-white/50">{subtitle}</p>
-      </div>
+      <ActaLoader size="xl" text={title} subtext={subtitle} />
     </div>
   );
 }
