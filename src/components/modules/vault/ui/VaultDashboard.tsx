@@ -12,13 +12,13 @@ import {
   Share2,
   Trash2,
   Eye,
-  Loader2,
   Copy,
   Plus,
   Wallet as WalletIcon,
   ShieldCheck,
   CircleAlert,
 } from 'lucide-react';
+import { ActaLoader, ActaLoaderInline, ActaLoaderOverlay } from '@/components/ui/acta-loader';
 import { useVaultDashboard } from '@/components/modules/vault/hooks/useVaultDashboard';
 import { useVaultCards } from '@/components/modules/vault/hooks/useVaultCards';
 import ShareCredentialModal from '@/components/modules/credentials/ui/ShareCredentialModal';
@@ -171,52 +171,51 @@ export default function VaultPage() {
   }
 
   if (vaultExists === false) {
-    if (showCreatingLoader) {
-      return (
-        <VaultStatusScreen
-          title="Creating vault…"
-          subtitle="Please sign the transaction in your wallet"
-        />
-      );
-    }
     return (
-      <div className="min-h-[60vh]">
-        <div className="border-b border-[#edeed1]/20 backdrop-blur-xl">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
-            <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">Vault</h1>
-            <p className="text-sm sm:text-base text-white/50 mt-1">
-              Your personal on-chain storage for credentials
-            </p>
+      <>
+        <ActaLoaderOverlay
+          open={showCreatingLoader}
+          text="Creating vault…"
+          subtext="Please sign the transaction in your wallet"
+        />
+        <div className="min-h-[60vh]">
+          <div className="border-b border-[#edeed1]/20 backdrop-blur-xl">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
+              <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">Vault</h1>
+              <p className="text-sm sm:text-base text-white/50 mt-1">
+                Your personal on-chain storage for credentials
+              </p>
+            </div>
+          </div>
+
+          <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 px-4 sm:px-6 py-10 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#edeed1]/10">
+              <Shield className="h-8 w-8 text-[#edeed1]" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-semibold text-white">Create your vault</h2>
+              <p className="mt-2 text-sm text-white/60">
+                A vault is where all credentials issued to your wallet will be stored securely on
+                Stellar. You only need to create it once.
+              </p>
+            </div>
+
+            <Button
+              onClick={handleCreateVault}
+              className="h-12 w-full max-w-sm rounded-xl bg-white font-semibold text-black shadow-lg shadow-white/10 transition-all duration-300 hover:bg-white/90 hover:shadow-xl hover:shadow-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create vault
+            </Button>
+
+            <div className="grid w-full max-w-xl grid-cols-1 gap-3 sm:grid-cols-3">
+              <FeatureChip icon={Shield} label="On-chain security" />
+              <FeatureChip icon={Lock} label="Wallet-bound access" />
+              <FeatureChip icon={Key} label="One-time setup" />
+            </div>
           </div>
         </div>
-
-        <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 px-4 sm:px-6 py-10 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#edeed1]/10">
-            <Shield className="h-8 w-8 text-[#edeed1]" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-semibold text-white">Create your vault</h2>
-            <p className="mt-2 text-sm text-white/60">
-              A vault is where all credentials issued to your wallet will be stored securely on
-              Stellar. You only need to create it once.
-            </p>
-          </div>
-
-          <Button
-            onClick={handleCreateVault}
-            className="h-12 w-full max-w-sm rounded-xl bg-white font-semibold text-black shadow-lg shadow-white/10 transition-all duration-300 hover:bg-white/90 hover:shadow-xl hover:shadow-white/20 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Create vault
-          </Button>
-
-          <div className="grid w-full max-w-xl grid-cols-1 gap-3 sm:grid-cols-3">
-            <FeatureChip icon={Shield} label="On-chain security" />
-            <FeatureChip icon={Lock} label="Wallet-bound access" />
-            <FeatureChip icon={Key} label="One-time setup" />
-          </div>
-        </div>
-      </div>
+      </>
     );
   }
 
@@ -452,7 +451,7 @@ export default function VaultPage() {
               >
                 {sponsoring ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <ActaLoaderInline className="mr-2" />
                     Creating sponsored vault…
                   </>
                 ) : (
@@ -705,6 +704,12 @@ export default function VaultPage() {
           </>
         )}
       </AnimatePresence>
+
+      <ActaLoaderOverlay
+        open={sponsoring}
+        text="Creating sponsored vault…"
+        subtext="Please sign the transaction in your wallet"
+      />
     </div>
   );
 }
@@ -739,13 +744,7 @@ function StatCard({
 function VaultStatusScreen({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
-      <div className="text-center">
-        <div className="mb-4 inline-flex h-10 w-10 items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#edeed1]" />
-        </div>
-        <p className="text-white/80">{title}</p>
-        <p className="mt-1 text-sm text-white/50">{subtitle}</p>
-      </div>
+      <ActaLoader size="xl" text={title} subtext={subtitle} />
     </div>
   );
 }
