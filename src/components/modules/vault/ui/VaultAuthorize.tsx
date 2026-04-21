@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { UserCheck, UserPlus, CircleCheck, ShieldPlus } from 'lucide-react';
-import { ActaLoader, ActaLoaderInline } from '@/components/ui/acta-loader';
+import { ActaLoader, ActaLoaderInline, ActaLoaderOverlay } from '@/components/ui/acta-loader';
 import { stellarAddressSchema } from '@/lib/schemas/primitives';
 
 export function VaultAuthorize() {
@@ -42,7 +42,15 @@ export function VaultAuthorize() {
 
   const addrLooksValid = stellarAddressSchema.safeParse(addressInput.trim()).success;
 
+  const signing = loadingSelf || loadingAddress;
+
   return (
+    <>
+    <ActaLoaderOverlay
+      open={signing}
+      text="Authorizing wallet…"
+      subtext="Please sign the transaction in your wallet"
+    />
     <div className="grid gap-4 md:grid-cols-2">
       <section className="rounded-2xl border border-[#edeed1]/20 bg-zinc-900/50 p-5 backdrop-blur-sm sm:p-6">
         <header className="mb-5 flex items-start gap-3">
@@ -147,5 +155,6 @@ export function VaultAuthorize() {
         </div>
       </section>
     </div>
+    </>
   );
 }

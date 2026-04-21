@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { AnimatePresence, motion } from 'motion/react';
 
 const frames = ['/ACTA1.png', '/ACTA2.png', '/ACTA3.png'] as const;
 
@@ -65,5 +66,35 @@ export function ActaLoaderInline({ className }: { className?: string }) {
         />
       ))}
     </span>
+  );
+}
+
+/**
+ * Full-screen overlay with blurred backdrop and centered ACTA loader.
+ * Renders via a portal-like fixed position on top of everything.
+ */
+export function ActaLoaderOverlay({
+  open,
+  text,
+  subtext,
+}: {
+  open: boolean;
+  text?: string;
+  subtext?: string;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md"
+        >
+          <ActaLoader size="xl" text={text} subtext={subtext} />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

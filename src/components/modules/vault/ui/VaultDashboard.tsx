@@ -18,7 +18,7 @@ import {
   ShieldCheck,
   CircleAlert,
 } from 'lucide-react';
-import { ActaLoader, ActaLoaderInline } from '@/components/ui/acta-loader';
+import { ActaLoader, ActaLoaderInline, ActaLoaderOverlay } from '@/components/ui/acta-loader';
 import { useVaultDashboard } from '@/components/modules/vault/hooks/useVaultDashboard';
 import { useVaultCards } from '@/components/modules/vault/hooks/useVaultCards';
 import ShareCredentialModal from '@/components/modules/credentials/ui/ShareCredentialModal';
@@ -171,15 +171,13 @@ export default function VaultPage() {
   }
 
   if (vaultExists === false) {
-    if (showCreatingLoader) {
-      return (
-        <VaultStatusScreen
-          title="Creating vault…"
-          subtitle="Please sign the transaction in your wallet"
-        />
-      );
-    }
     return (
+      <>
+      <ActaLoaderOverlay
+        open={showCreatingLoader}
+        text="Creating vault…"
+        subtext="Please sign the transaction in your wallet"
+      />
       <div className="min-h-[60vh]">
         <div className="border-b border-[#edeed1]/20 backdrop-blur-xl">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
@@ -217,6 +215,7 @@ export default function VaultPage() {
           </div>
         </div>
       </div>
+      </>
     );
   }
 
@@ -705,6 +704,12 @@ export default function VaultPage() {
           </>
         )}
       </AnimatePresence>
+
+      <ActaLoaderOverlay
+        open={sponsoring}
+        text="Creating sponsored vault…"
+        subtext="Please sign the transaction in your wallet"
+      />
     </div>
   );
 }

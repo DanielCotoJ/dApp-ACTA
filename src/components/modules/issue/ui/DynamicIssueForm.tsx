@@ -13,7 +13,7 @@ import {
   Send,
   Calendar,
 } from 'lucide-react';
-import { ActaLoaderInline } from '@/components/ui/acta-loader';
+import { ActaLoaderInline, ActaLoaderOverlay } from '@/components/ui/acta-loader';
 import { Button } from '@/components/ui/button';
 import { validateApiKey } from '@/lib/actaApi';
 import { useNetwork } from '@/providers/network.provider';
@@ -106,6 +106,12 @@ export default function DynamicIssueForm({
   }
 
   return (
+    <>
+    <ActaLoaderOverlay
+      open={issuing}
+      text="Issuing credential…"
+      subtext="Please sign the transaction in your wallet"
+    />
     <div className="space-y-6">
       {/* Template overview */}
       <section className="relative overflow-hidden rounded-2xl border border-[#edeed1]/20 bg-zinc-900/50 p-5 backdrop-blur-sm sm:p-6">
@@ -327,6 +333,7 @@ export default function DynamicIssueForm({
         )}
       </section>
     </div>
+    </>
   );
 }
 

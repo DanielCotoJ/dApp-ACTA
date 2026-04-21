@@ -16,7 +16,8 @@
       "Bash(npx eslint .)",
       "Bash(npx prettier --write .)",
       "Bash(xargs grep:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }

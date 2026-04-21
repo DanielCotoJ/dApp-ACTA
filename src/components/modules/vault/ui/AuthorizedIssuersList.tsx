@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Trash2, Users, Copy, Check } from 'lucide-react';
-import { ActaLoaderInline } from '@/components/ui/acta-loader';
+import { ActaLoaderInline, ActaLoaderOverlay } from '@/components/ui/acta-loader';
 import { useVaultAuthorizedList } from '@/components/modules/vault/hooks/use-vault-authorized-list';
 import { toast } from 'sonner';
 
@@ -37,6 +37,12 @@ export function AuthorizedIssuersList() {
   };
 
   return (
+    <>
+    <ActaLoaderOverlay
+      open={!!revoking}
+      text="Revoking wallet…"
+      subtext="Please sign the transaction in your wallet"
+    />
     <section className="rounded-2xl border border-[#edeed1]/20 bg-zinc-900/50 p-5 backdrop-blur-sm sm:p-6">
       <header className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
@@ -180,5 +186,6 @@ export function AuthorizedIssuersList() {
         </>
       )}
     </section>
+    </>
   );
 }
