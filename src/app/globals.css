@@ -378,17 +378,16 @@ html:not(.dark) *::-webkit-scrollbar-thumb {
   will-change: transform;
 }
 
-/* ACTA loader: 3 frames cycle with fade */
+/* ACTA loader: 3 frames crossfade without gaps */
 @keyframes actaFrame {
-  0%,
-  10% {
+  0% {
     opacity: 0;
   }
-  16%,
-  33% {
+  8%,
+  37% {
     opacity: 1;
   }
-  40%,
+  45%,
   100% {
     opacity: 0;
   }
