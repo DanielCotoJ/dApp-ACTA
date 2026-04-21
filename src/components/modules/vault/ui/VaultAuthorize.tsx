@@ -59,7 +59,11 @@ export function VaultAuthorize() {
 
         {checkingAuth ? (
           <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-[#edeed1]/15 bg-zinc-950/40 p-5 text-center">
-            <ActaLoader size="md" text="Checking authorization…" subtext="Verifying issuer permissions on-chain" />
+            <ActaLoader
+              size="md"
+              text="Checking authorization…"
+              subtext="Verifying issuer permissions on-chain"
+            />
           </div>
         ) : isSelfAuthorized ? (
           <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">

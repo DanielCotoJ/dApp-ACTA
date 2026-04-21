@@ -109,11 +109,7 @@ export function AuthorizedIssuersList() {
                         className="h-9 rounded-lg bg-red-500/10 px-3 text-red-400 hover:bg-red-500/20 hover:text-red-300 disabled:opacity-50"
                         aria-label="Revoke"
                       >
-                        {isRevoking ? (
-                          <ActaLoaderInline />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
+                        {isRevoking ? <ActaLoaderInline /> : <Trash2 className="h-4 w-4" />}
                       </Button>
                     </div>
                   </div>

@@ -35,10 +35,7 @@ export function ActaLoader({ size = 'md', className, text, subtext }: ActaLoader
             width={56}
             height={56}
             priority
-            className={cn(
-              'absolute inset-0 h-full w-full object-contain',
-              'acta-loader-frame'
-            )}
+            className={cn('absolute inset-0 h-full w-full object-contain', 'acta-loader-frame')}
             style={{ animationDelay: `${i * 0.9}s` }}
           />
         ))}
