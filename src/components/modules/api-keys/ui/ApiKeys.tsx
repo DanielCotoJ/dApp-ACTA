@@ -53,7 +53,7 @@ function resolveFullSecret(
   row: RowModel,
   sessionKey: string | undefined,
   sessionRecordId: string | undefined,
-  storedKey: string,
+  storedKey: string
 ): string | null {
   if (row.kind === 'orphan') return storedKey.trim() || null;
   if (sessionRecordId === row.entry.record.id && sessionKey) return sessionKey;
@@ -77,8 +77,7 @@ export default function ApiKeys() {
     return getApiKeyRegistry(network)
       .filter((e) => e.wallet_address === walletAddress)
       .sort(
-        (a, b) =>
-          new Date(b.record.created_at).getTime() - new Date(a.record.created_at).getTime(),
+        (a, b) => new Date(b.record.created_at).getTime() - new Date(a.record.created_at).getTime()
       );
   }, [network, walletAddress, data?.api_key_record?.id]);
 
@@ -99,9 +98,7 @@ export default function ApiKeys() {
   }, [registryForWallet, apiKey, walletAddress]);
 
   const hasBlockingKey =
-    Boolean(apiKey.trim()) ||
-    registryForWallet.length > 0 ||
-    Boolean(data?.api_key);
+    Boolean(apiKey.trim()) || registryForWallet.length > 0 || Boolean(data?.api_key);
 
   const disabled = loading || hasBlockingKey || !walletAddress;
 
@@ -152,7 +149,9 @@ export default function ApiKeys() {
         {!walletAddress ? (
           <div className="flex items-center gap-3 px-5 py-10 sm:px-6">
             <CircleAlert className="h-5 w-5 shrink-0 text-zinc-500" />
-            <p className="text-sm text-zinc-400">Connect your wallet to view and create API keys.</p>
+            <p className="text-sm text-zinc-400">
+              Connect your wallet to view and create API keys.
+            </p>
           </div>
         ) : rows.length === 0 ? (
           <div className="px-5 py-12 text-center sm:px-6">

@@ -40,13 +40,7 @@ export function ActaLoader({ size = 'md', className, text, subtext }: ActaLoader
   };
 
   return (
-    <div
-      className={cn(
-        'flex flex-col items-center',
-        size === 'xl' ? 'gap-5' : 'gap-3',
-        className,
-      )}
-    >
+    <div className={cn('flex flex-col items-center', size === 'xl' ? 'gap-5' : 'gap-3', className)}>
       <div className={cn('relative', sizeMap[size])}>
         {frames.map((src, i) => (
           <Image
@@ -61,7 +55,9 @@ export function ActaLoader({ size = 'md', className, text, subtext }: ActaLoader
           />
         ))}
       </div>
-      {text && <p className={cn('text-center font-medium text-white/85', textClassMap[size])}>{text}</p>}
+      {text && (
+        <p className={cn('text-center font-medium text-white/85', textClassMap[size])}>{text}</p>
+      )}
       {subtext && <p className={cn('text-center', subtextClassMap[size])}>{subtext}</p>}
     </div>
   );

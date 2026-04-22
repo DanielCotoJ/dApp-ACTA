@@ -51,7 +51,7 @@ export function upsertApiKeyRegistryEntry(
   network: ActaNetwork,
   walletAddress: string,
   record: PublicApiKeyRecord,
-  fullKey: string,
+  fullKey: string
 ): void {
   const prefix = fullKey.slice(0, 6);
   const suffix = fullKey.slice(-4);
@@ -73,7 +73,7 @@ export function upsertApiKeyRegistryEntry(
 
 export function keyMatchesPreview(
   fullKey: string,
-  preview: { prefix: string; suffix: string },
+  preview: { prefix: string; suffix: string }
 ): boolean {
   if (!fullKey || fullKey.length < preview.prefix.length + preview.suffix.length) return false;
   return fullKey.startsWith(preview.prefix) && fullKey.endsWith(preview.suffix);
