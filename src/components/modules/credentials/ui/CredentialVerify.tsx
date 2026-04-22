@@ -15,7 +15,7 @@ export function CredentialVerify({ vcId }: { vcId: string }) {
   if (shareLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <ActaLoader size="lg" text="Loading credential…" />
+        <ActaLoader size="xl" text="Loading credential…" />
       </div>
     );
   }

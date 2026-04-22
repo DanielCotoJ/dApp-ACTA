@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useNetwork } from '@/providers/network.provider';
 import { useWalletContext } from '@/providers/wallet.provider';
 import type { PublicApiKeyResponse } from '@/@types/api-keys';
+import { upsertApiKeyRegistryEntry } from '@/lib/apiKeyRegistry';
 import { setStoredApiKey } from '@/lib/actaApi';
 import { publicApiKeyResponseSchema } from '@/lib/schemas/api-keys';
 import { apiErrorSchema, createApiKeyPayloadSchema } from '@/lib/schemas/acta-api';
@@ -139,6 +140,7 @@ export function usePublicApiKey() {
         setData(typed);
         // Store API key for the current network to be used across the app.
         setStoredApiKey(network, typed.api_key);
+        upsertApiKeyRegistryEntry(network, walletAddress, typed.api_key_record, typed.api_key);
 
         // Force a page reload or trigger vault status refresh after API key is created
         // This ensures the vault existence check runs with the new API key
