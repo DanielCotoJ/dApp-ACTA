@@ -15,6 +15,16 @@ export function useActaApiKey() {
     setApiKeyState(getStoredApiKey(network));
   }, [network]);
 
+  useEffect(() => {
+    const onCreated = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ network?: string }>).detail;
+      if (detail?.network && detail.network !== network) return;
+      setApiKeyState(getStoredApiKey(network));
+    };
+    window.addEventListener('acta-api-key-created', onCreated);
+    return () => window.removeEventListener('acta-api-key-created', onCreated);
+  }, [network]);
+
   const setApiKey = useCallback(
     (next: string) => {
       setApiKeyState(next);
